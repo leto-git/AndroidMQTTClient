@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">AndroidMQTTClient</string>
+    <string name="connect">Connect</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="publish">Publish</string>
+    <string name="stats">Stats</string>
+    <string name="info">Info</string>
+    <string name="back_button">Back</string>
 </resources>
