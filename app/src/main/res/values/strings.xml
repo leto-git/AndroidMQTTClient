@@ -6,4 +6,12 @@
     <string name="stats">Stats</string>
     <string name="info">Info</string>
     <string name="back_button">Back</string>
+    <string name="new_subscription">New Subscription</string>
+    <string name="view_subscriptions">View Subscriptions</string>
+    <string name="messages">Messages</string>
+    <string name="topic">Topic</string>
+    <string name="cancel">Cancel</string>
+    <string name="color_for_subscription_messages">Color for subscription messages</string>
+    <string name="close">Close</string>
+    <string name="active_subscriptions">Active Subscriptions</string>
 </resources>

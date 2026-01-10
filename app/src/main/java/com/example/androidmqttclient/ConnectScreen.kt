@@ -27,6 +27,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -36,6 +38,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.androidmqttclient.ui.MQTTViewModel
+import com.example.androidmqttclient.ui.SubscribeScreen
+
+// TODO: Move content of this file to new file `MQTTApp` and implement ConnectScreen here
 
 enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
     Connect(R.string.connect, Icons.Default.Call),
@@ -70,6 +75,7 @@ fun MQTTApp(
     ) { innerPadding ->
         val uiState by viewModel.uiState.collectAsState()
 
+        // NavHost composable for app navigation
         NavHost(
             navController = navController,
             startDestination = MQTTScreen.Connect.name,
@@ -77,7 +83,15 @@ fun MQTTApp(
         ) {
             // TODO: Replace placeholders with actual screens
             composable(route = MQTTScreen.Connect.name) { PlaceholderScreen("Connect") }
-            composable(route = MQTTScreen.Subscribe.name) { PlaceholderScreen("Subscribe") }
+            composable(route = MQTTScreen.Subscribe.name) {
+                SubscribeScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(R.dimen.padding_medium)),
+                    uiState = uiState,
+                    onAddSubscription = { viewModel.addSubscription(it) }
+                )
+            }
             composable(route = MQTTScreen.Publish.name) { PlaceholderScreen("Publish") }
             composable(route = MQTTScreen.Stats.name) { PlaceholderScreen("Stats") }
             composable(route = MQTTScreen.Info.name) { PlaceholderScreen("Info") }
@@ -94,7 +108,10 @@ fun MQTTAppBar(
     navigateUp: () -> Unit = {},
 ) {
     TopAppBar(
-        title = { Text(stringResource(currentScreen.title)) },
+        title = { Text(
+            text = stringResource(currentScreen.title),
+            style = MaterialTheme.typography.headlineMedium
+        ) },
         modifier = modifier,
         navigationIcon = {
             if (canNavigateBack) {
