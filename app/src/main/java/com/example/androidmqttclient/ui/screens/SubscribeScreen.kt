@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.ui
+package com.example.androidmqttclient.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.MQTTUiState
 import com.example.androidmqttclient.data.Subscription
+import com.example.androidmqttclient.ui.NewSubscriptionDialog
+import com.example.androidmqttclient.ui.SubscriptionsOverviewDialog
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**

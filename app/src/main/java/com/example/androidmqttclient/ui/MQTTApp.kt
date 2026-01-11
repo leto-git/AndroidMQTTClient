@@ -1,4 +1,4 @@
-package com.example.androidmqttclient
+package com.example.androidmqttclient.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,8 +36,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.androidmqttclient.ui.MQTTViewModel
-import com.example.androidmqttclient.ui.SubscribeScreen
+import com.example.androidmqttclient.R
+import com.example.androidmqttclient.viewmodel.MQTTViewModel
+import com.example.androidmqttclient.ui.screens.SubscribeScreen
 
 // TODO: Move content of this file to new file `MQTTApp` and implement ConnectScreen here
 

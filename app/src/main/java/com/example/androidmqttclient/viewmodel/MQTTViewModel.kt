@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.ui
+package com.example.androidmqttclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.androidmqttclient.data.MQTTUiState
