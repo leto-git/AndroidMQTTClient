@@ -6,5 +6,6 @@ package com.example.androidmqttclient.data
 data class MQTTUiState(
     val isConnected: Boolean = false,
     val subscriptions: List<Subscription> = listOf(),
+    val subscriptions: List<MqttSubscription> = listOf(),
     val messages: List<String> = listOf(),
 )

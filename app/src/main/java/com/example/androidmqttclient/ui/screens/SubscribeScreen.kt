@@ -24,9 +24,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.MQTTUiState
-import com.example.androidmqttclient.data.Subscription
-import com.example.androidmqttclient.ui.NewSubscriptionDialog
-import com.example.androidmqttclient.ui.SubscriptionsOverviewDialog
+import com.example.androidmqttclient.data.MqttSubscription
+import com.example.androidmqttclient.ui.components.NewSubscriptionDialog
+import com.example.androidmqttclient.ui.components.SubscriptionsOverviewDialog
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
@@ -36,7 +36,7 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 fun SubscribeScreen(
     modifier: Modifier = Modifier,
     uiState: MQTTUiState,
-    onAddSubscription: (Subscription) -> Unit = {}
+    onAddSubscription: (MqttSubscription) -> Unit = {}
 ) {
     // State to track if the new subscription dialog should be shown
     var showNewSubscriptionDialog by remember { mutableStateOf(false) }
@@ -99,7 +99,7 @@ fun SubscribeScreen(
             onDismiss = { showNewSubscriptionDialog = false },
             onConfirm = { qos, topic, color ->
                 // Create a new subscription
-                val newSubscription = Subscription(qos, topic, color)
+                val newSubscription = MqttSubscription(qos, topic, color)
 
                 // Callback with new subscription
                 onAddSubscription(newSubscription)
@@ -140,7 +140,7 @@ fun SubscribeScreenPreview() {
     AndroidMQTTClientTheme {
         SubscribeScreen(
             uiState = MQTTUiState(
-                subscriptions = listOf(Subscription(0, "test/topic", 0xFFFF0000))
+                subscriptions = listOf(MqttSubscription(0, "test/topic", 0xFFFF0000))
             ),
             onAddSubscription = {}
         )

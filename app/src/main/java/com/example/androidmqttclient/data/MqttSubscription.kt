@@ -1,9 +1,9 @@
 package com.example.androidmqttclient.data
 
 /**
- * [Subscription] is the data class that is used to represent a subscription.
+ * [MqttSubscription] is the data class that is used to represent a subscription.
  */
-data class Subscription (
+data class MqttSubscription (
     val qos: Int,
     val topic: String,
     val color: Long

@@ -3,6 +3,7 @@ package com.example.androidmqttclient.viewmodel
 import androidx.lifecycle.ViewModel
 import com.example.androidmqttclient.data.MQTTUiState
 import com.example.androidmqttclient.data.Subscription
+import com.example.androidmqttclient.data.MqttSubscription
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,10 @@ class MQTTViewModel: ViewModel() {
     /**
      * [addSubscription] adds a new subscription to the list of subscriptions.
      */
-    fun addSubscription(subscription: Subscription) {
+    fun addSubscription(subscription: MqttSubscription) {
+        // TODO: Check for validity of subscription data (topic, qos, etc)
+        // TODO: Check if subscription already exists
+
         _uiState.update { currentState ->
             currentState.copy(
                 subscriptions = currentState.subscriptions + subscription
@@ -39,5 +43,8 @@ class MQTTViewModel: ViewModel() {
         //         subscriptions = currentState.subscriptions - subscription
         //     )
         // }
+    fun removeSubscription(subscription: MqttSubscription) {
+        TODO("Not yet implemented")
+    }
     }
 }

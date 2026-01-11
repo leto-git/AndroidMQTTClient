@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.ui
+package com.example.androidmqttclient.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.Subscription
+import com.example.androidmqttclient.data.MqttSubscription
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
@@ -35,7 +35,7 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  */
 @Composable
 fun SubscriptionsOverviewDialog(
-    subscriptions: List<Subscription> = listOf(),
+    subscriptions: List<MqttSubscription> = listOf(),
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -61,7 +61,7 @@ fun SubscriptionsOverviewDialog(
 }
 
 @Composable
-fun SubscriptionsOverviewContent(subscriptions: List<Subscription>) {
+fun SubscriptionsOverviewContent(subscriptions: List<MqttSubscription>) {
     HorizontalDivider()
 
     // List of subscriptions
@@ -77,7 +77,7 @@ fun SubscriptionsOverviewContent(subscriptions: List<Subscription>) {
 }
 
 @Composable
-fun SubscriptionItem(subscription: Subscription) {
+fun SubscriptionItem(subscription: MqttSubscription) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -122,12 +122,12 @@ fun SubscriptionsOverviewContentPreview() {
         ) {
             SubscriptionsOverviewContent(
                 subscriptions = listOf(
-                    Subscription(
+                    MqttSubscription(
                         qos = 2,
                         topic = "test/topic/1",
                         color = 0xFFFF0000
                     ),
-                    Subscription(
+                    MqttSubscription(
                         qos = 0,
                         topic = "test/topic/2",
                         color = 0xFF008000

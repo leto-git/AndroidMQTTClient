@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.ui
+package com.example.androidmqttclient.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -89,7 +89,7 @@ fun NewSubscriptionContent(
     onColorChange: (Long) -> Unit
 ) {
     // List of available colors for subscription messages
-    val subscriptionColors = listOf<Long>(
+    val subscriptionColors = listOf(
         0xFFFF0000, // Red
         0xFFFFA500, // Orange
         0xFFFFFF00, // Yellow
