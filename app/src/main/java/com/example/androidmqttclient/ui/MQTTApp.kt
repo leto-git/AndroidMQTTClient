@@ -37,10 +37,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.viewmodel.MQTTViewModel
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
-
-// TODO: Move content of this file to new file `MQTTApp` and implement ConnectScreen here
 
 enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
     Connect(R.string.connect, Icons.Default.Call),
@@ -82,7 +81,15 @@ fun MQTTApp(
             modifier = Modifier.padding(innerPadding)
         ) {
             // TODO: Replace placeholders with actual screens
-            composable(route = MQTTScreen.Connect.name) { PlaceholderScreen("Connect") }
+            composable(route = MQTTScreen.Connect.name) {
+                ConnectScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(R.dimen.padding_medium)),
+                    uiState = uiState,
+                    onAddServer = { viewModel.addServer(it) }
+                )
+            }
             composable(route = MQTTScreen.Subscribe.name) {
                 SubscribeScreen(
                     modifier = Modifier

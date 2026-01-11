@@ -2,7 +2,7 @@ package com.example.androidmqttclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.androidmqttclient.data.MQTTUiState
-import com.example.androidmqttclient.data.Subscription
+import com.example.androidmqttclient.data.MqttServerConnection
 import com.example.androidmqttclient.data.MqttSubscription
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,15 +36,25 @@ class MQTTViewModel: ViewModel() {
     /**
      * [removeSubscription] removes a subscription from the list of subscriptions.
      */
-    fun removeSubscription(subscription: Subscription) {
-        // TODO: Implement removeSubscription
-        // _uiState.update { currentState ->
-        //     currentState.copy(
-        //         subscriptions = currentState.subscriptions - subscription
-        //     )
-        // }
     fun removeSubscription(subscription: MqttSubscription) {
         TODO("Not yet implemented")
     }
+
+    /**
+     * [addServer] adds a new server to the list of available servers.
+     */
+    fun addServer(server: MqttServerConnection) {
+        // TODO: Check for validity of server data
+        // TODO: Check if server already exists
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                serversConnections = currentState.serversConnections + server
+            )
+        }
+    }
+
+    fun removeServer(server: MqttServerConnection) {
+        TODO("Not yet implemented")
     }
 }
