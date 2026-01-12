@@ -54,6 +54,9 @@ class MQTTViewModel: ViewModel() {
         }
     }
 
+    /**
+     * [removeServer] removes a server from the list of available servers.
+     */
     fun removeServer(server: MqttServerConnection) {
         TODO("Not yet implemented")
     }
