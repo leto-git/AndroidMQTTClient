@@ -55,7 +55,7 @@ fun AddServerDialog(
     var willMessage by remember { mutableStateOf("") }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { },
         title = { Text(stringResource(R.string.add_server)) },
         text = {
             AddServerContent(
@@ -135,6 +135,7 @@ fun AddServerContent(
     onWillMessageChange: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // TODO: Enable jumping to next field on enter with `keyboardOptions.imeAction`
         // Server name input
         OutlinedTextField(
             value = serverName,
