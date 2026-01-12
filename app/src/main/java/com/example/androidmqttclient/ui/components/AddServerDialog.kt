@@ -1,5 +1,6 @@
 package com.example.androidmqttclient.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -229,7 +230,9 @@ fun AddServerContent(
             )
             // Clean session checkbox with label
             Row(
-                modifier = Modifier.weight(0.5f),
+                modifier = Modifier
+                    .weight(0.5f)
+                    .clickable { onCleanSessionChange(!cleanSession) },
                 horizontalArrangement = Arrangement.spacedBy(0.5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -269,7 +272,9 @@ fun AddServerContent(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(0.5.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(0.5f)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .clickable { onWillRetainChange(!willRetain) }
             ) {
                 Checkbox(
                     checked = willRetain,
