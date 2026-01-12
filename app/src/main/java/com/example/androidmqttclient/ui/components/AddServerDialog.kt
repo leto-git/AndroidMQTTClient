@@ -4,15 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -116,11 +117,14 @@ fun AddServerContent(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Server name input
-        TextField(
+        OutlinedTextField(
             value = serverName,
             onValueChange = onServerNameChange,
             label = { Text(stringResource(R.string.server_name)) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            singleLine = true
         )
         // Server address and port input
         Row(
@@ -128,14 +132,17 @@ fun AddServerContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Server address (host) input
-            TextField(
+            OutlinedTextField(
                 value = serverAddress,
                 onValueChange = onServerAddressChange,
                 label = { Text(stringResource(R.string.host)) },
-                modifier = Modifier.weight(0.5f)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(64.dp),
+                singleLine = true
             )
             // Server port input
-            TextField(
+            OutlinedTextField(
                 value = if (serverPort == 0) "" else serverPort.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 5 characters (port max is 65535)
@@ -144,30 +151,41 @@ fun AddServerContent(
                     }
                 },
                 label = { Text(stringResource(R.string.port)) },
-                modifier = Modifier.weight(0.5f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(64.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
             )
         }
         // Client ID
-        TextField(
+        OutlinedTextField(
             value = clientID,
             onValueChange = onClientIDChange,
             label = { Text(stringResource(R.string.client_id)) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
         )
         // Username
-        TextField(
+        OutlinedTextField(
             value = username,
             onValueChange = onUsernameChange,
             label = { Text(stringResource(R.string.user_name_optional)) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            singleLine = true
         )
         // Password
-        TextField(
+        OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
             label = { Text(stringResource(R.string.password_optional)) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            singleLine = true
         )
         // Keep alive and clean session
         Row(
@@ -176,17 +194,20 @@ fun AddServerContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Keep alive
-            TextField(
-                value = if (keepAlive == 0) "" else keepAlive.toString(),
+            OutlinedTextField(
+                value = if (keepAlive < 0) "" else keepAlive.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 5 characters (keep alive max is 65535)
                     if (newValue.all { it.isDigit() } && newValue.length <= 5) {
-                        onKeepAliveChange(newValue.toIntOrNull() ?: 0)
+                        onKeepAliveChange(newValue.toIntOrNull() ?: -1)
                     }
                 },
                 label = { Text(stringResource(R.string.keep_alive_seconds)) },
-                modifier = Modifier.weight(0.5f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(64.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
             )
             // Clean session checkbox with label
             Row(
@@ -211,8 +232,8 @@ fun AddServerContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Last will QoS
-            TextField(
-                value = if (willQos == -1) "" else willQos.toString(),
+            OutlinedTextField(
+                value = if (willQos < 0 || willQos > 2) "" else willQos.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 1 character (QoS max is 2)
                     if (newValue.all { it.isDigit() } && newValue.length <= 1) {
@@ -220,8 +241,11 @@ fun AddServerContent(
                     }
                 },
                 label = { Text(stringResource(R.string.last_will_qos)) },
-                modifier = Modifier.weight(0.5f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(64.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
             )
             // Last will retain checkbox and label
             Row(
@@ -245,18 +269,23 @@ fun AddServerContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Last will topic input
-            TextField(
+            OutlinedTextField(
                 value = willTopic,
                 onValueChange = onWillTopicChange,
                 label = { Text(stringResource(R.string.last_will_topic)) },
-                modifier = Modifier.weight(0.5f)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(96.dp),
+                singleLine = true
             )
             // Last will message input
-            TextField(
+            OutlinedTextField(
                 value = willMessage,
                 onValueChange = onWillMessageChange,
                 label = { Text(stringResource(R.string.last_will_message)) },
-                modifier = Modifier.weight(0.5f)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(96.dp)
             )
         }
     }
