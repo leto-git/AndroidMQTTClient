@@ -81,16 +81,13 @@ fun AddServerDialog(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val enableAdd = serverName.isNotBlank() && serverAddress.isNotBlank() && serverPort > 0 && clientID.isNotBlank()
 
-            TextButton(onClick = { onConfirm(MqttServerConnection(false, serverName, serverAddress, serverPort,
-                clientID, username, password, keepAlive, cleanSession,
-                willQos, willRetain, willTopic, willMessage)) }
-            ) {
-                Text(stringResource(R.string.add))
                 // "Add" button
                 OutlinedButton(onClick = { onAdd(MqttServerConnection(false, serverName, serverAddress, serverPort,
                     clientID, username, password, keepAlive, cleanSession,
                     willQos, willRetain, willTopic, willMessage)) },
+                    enabled = enableAdd
                 ) {
                     Text(stringResource(R.string.add))
                 }
@@ -98,6 +95,7 @@ fun AddServerDialog(
                 Button(onClick = { onAddAndConnect(MqttServerConnection(false, serverName, serverAddress, serverPort,
                     clientID, username, password, keepAlive, cleanSession,
                     willQos, willRetain, willTopic, willMessage)) },
+                    enabled = enableAdd
                 ) {
                     Text(stringResource(R.string.add_and_connect))
                 }
