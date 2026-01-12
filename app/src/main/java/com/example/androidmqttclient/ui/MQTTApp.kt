@@ -38,6 +38,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.ui.screens.ConnectScreen
+import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.viewmodel.MQTTViewModel
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
 
@@ -80,7 +81,7 @@ fun MQTTApp(
             startDestination = MQTTScreen.Connect.name,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // TODO: Replace placeholders with actual screens
+            // Connect screen
             composable(route = MQTTScreen.Connect.name) {
                 ConnectScreen(
                     modifier = Modifier
@@ -91,6 +92,8 @@ fun MQTTApp(
                     onConnect = { viewModel.connect(it) }
                 )
             }
+
+            // Subscribe screen
             composable(route = MQTTScreen.Subscribe.name) {
                 SubscribeScreen(
                     modifier = Modifier
@@ -100,7 +103,20 @@ fun MQTTApp(
                     onAddSubscription = { viewModel.addSubscription(it) }
                 )
             }
-            composable(route = MQTTScreen.Publish.name) { PlaceholderScreen("Publish") }
+
+            // Publish screen
+            composable(route = MQTTScreen.Publish.name) {
+                PublishScreen (
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(R.dimen.padding_medium)),
+                    onPublish = { mqttMessage ->
+                        viewModel.publish(mqttMessage)
+                    }
+                )
+            }
+
+            // TODO: Replace placeholders with actual screens
             composable(route = MQTTScreen.Stats.name) { PlaceholderScreen("Stats") }
             composable(route = MQTTScreen.Info.name) { PlaceholderScreen("Info") }
         }

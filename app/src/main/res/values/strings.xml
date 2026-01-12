@@ -29,4 +29,7 @@
     <string name="add">Add</string>
     <string name="client_id">Client ID</string>
     <string name="add_and_connect"><![CDATA[Add & connect]]></string>
+    <string name="message">Message</string>
+    <string name="retain">Retain</string>
+    <string name="qos">QoS</string>
 </resources>

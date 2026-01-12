@@ -2,6 +2,7 @@ package com.example.androidmqttclient.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.androidmqttclient.data.MQTTUiState
+import com.example.androidmqttclient.data.MqttMessage
 import com.example.androidmqttclient.data.MqttServerConnection
 import com.example.androidmqttclient.data.MqttSubscription
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,5 +67,12 @@ class MQTTViewModel: ViewModel() {
      */
     fun connect(server: MqttServerConnection) {
         TODO("Not yet implemented")
+    }
+
+    /**
+     * [publish] publishes a message.
+     */
+    fun publish(message: MqttMessage) {
+        // TODO("Not yet implemented")
     }
 }
