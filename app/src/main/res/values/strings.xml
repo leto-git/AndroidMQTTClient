@@ -28,4 +28,5 @@
     <string name="add_server">Add server</string>
     <string name="add">Add</string>
     <string name="client_id">Client ID</string>
+    <string name="add_and_connect"><![CDATA[Add & connect]]></string>
 </resources>

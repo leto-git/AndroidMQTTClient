@@ -87,7 +87,8 @@ fun MQTTApp(
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_medium)),
                     uiState = uiState,
-                    onAddServer = { viewModel.addServer(it) }
+                    onAddServer = { viewModel.addServer(it) },
+                    onConnect = { viewModel.connect(it) }
                 )
             }
             composable(route = MQTTScreen.Subscribe.name) {

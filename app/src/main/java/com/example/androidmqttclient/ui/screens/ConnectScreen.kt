@@ -45,7 +45,8 @@ import com.example.androidmqttclient.ui.theme.ConnectionRed
 fun ConnectScreen(
     modifier: Modifier = Modifier,
     uiState: MQTTUiState,
-    onAddServer: (MqttServerConnection) -> Unit = {}
+    onAddServer: (MqttServerConnection) -> Unit = {},
+    onConnect: (MqttServerConnection) -> Unit = {}
 ) {
     // State to track if the add server dialog should be shown
     var showAddServerDialog by remember { mutableStateOf(false) }
@@ -91,8 +92,13 @@ fun ConnectScreen(
     if( showAddServerDialog ) {
         AddServerDialog(
             onDismiss = { showAddServerDialog = false },
-            onConfirm = { newConnection ->
+            onAdd = { newConnection ->
                 onAddServer(newConnection)
+                showAddServerDialog = false
+            },
+            onAddAndConnect = { newConnection ->
+                onAddServer(newConnection)
+                onConnect(newConnection)
                 showAddServerDialog = false
             }
         )

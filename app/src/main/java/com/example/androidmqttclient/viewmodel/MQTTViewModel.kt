@@ -57,4 +57,11 @@ class MQTTViewModel: ViewModel() {
     fun removeServer(server: MqttServerConnection) {
         TODO("Not yet implemented")
     }
+
+    /**
+     * [connect] connects to a server.
+     */
+    fun connect(server: MqttServerConnection) {
+        TODO("Not yet implemented")
+    }
 }

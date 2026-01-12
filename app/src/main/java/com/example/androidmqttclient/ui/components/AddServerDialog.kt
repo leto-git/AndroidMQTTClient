@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,7 +35,8 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 @Composable
 fun AddServerDialog(
     onDismiss: () -> Unit,
-    onConfirm: (MqttServerConnection) -> Unit
+    onAdd: (MqttServerConnection) -> Unit,
+    onAddAndConnect: (MqttServerConnection) -> Unit
 ) {
     // Connection parameters
     // TODO: MQTT 5.0 connection parameters
@@ -73,14 +76,31 @@ fun AddServerDialog(
             )
         },
 
-        // Confirm (Subscribe) button
         confirmButton = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 
             TextButton(onClick = { onConfirm(MqttServerConnection(false, serverName, serverAddress, serverPort,
                 clientID, username, password, keepAlive, cleanSession,
                 willQos, willRetain, willTopic, willMessage)) }
             ) {
                 Text(stringResource(R.string.add))
+                // "Add" button
+                OutlinedButton(onClick = { onAdd(MqttServerConnection(false, serverName, serverAddress, serverPort,
+                    clientID, username, password, keepAlive, cleanSession,
+                    willQos, willRetain, willTopic, willMessage)) },
+                ) {
+                    Text(stringResource(R.string.add))
+                }
+                // "Add and subscribe" button
+                Button(onClick = { onAddAndConnect(MqttServerConnection(false, serverName, serverAddress, serverPort,
+                    clientID, username, password, keepAlive, cleanSession,
+                    willQos, willRetain, willTopic, willMessage)) },
+                ) {
+                    Text(stringResource(R.string.add_and_connect))
+                }
             }
         },
 
@@ -89,7 +109,7 @@ fun AddServerDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
-        }
+        },
     )
 }
 
