@@ -43,6 +43,7 @@ import com.example.androidmqttclient.viewmodel.MQTTViewModel
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
 
 enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
+    // TODO: Replace placeholder icons with custom ones
     Connect(R.string.connect, Icons.Default.Call),
     Subscribe(R.string.subscribe, Icons.Default.Add),
     Publish(R.string.publish, Icons.AutoMirrored.Default.Send),
@@ -50,6 +51,9 @@ enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
     Info(R.string.info, Icons.Default.Info)
 }
 
+/**
+ * [MQTTApp] composable defining the general app layout
+ */
 @Composable
 fun MQTTApp(
     viewModel: MQTTViewModel = viewModel(),
@@ -123,6 +127,9 @@ fun MQTTApp(
     }
 }
 
+/**
+ * [MQTTAppBar] composable for the top app bar showing current screen title etc.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MQTTAppBar(
@@ -150,6 +157,9 @@ fun MQTTAppBar(
     )
 }
 
+/**
+ * [MQTTBottomBar] composable showing different icons for screen navigation
+ */
 @Composable
 fun MQTTBottomBar(
     currentRoute: String?,

@@ -136,6 +136,7 @@ fun AddServerContent(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // TODO: Enable jumping to next field on enter with `keyboardOptions.imeAction`
+        // TODO: Make content horizontally scrollable if needed e.g. when in large landscape mode
         // Server name input
         OutlinedTextField(
             value = serverName,
