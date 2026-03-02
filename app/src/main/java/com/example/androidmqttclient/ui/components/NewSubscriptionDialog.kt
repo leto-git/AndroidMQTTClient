@@ -63,6 +63,7 @@ fun NewSubscriptionDialog(
             )
         },
 
+        // TODO: Add confirmation for user with snackBar (see PublishScreen)
         // Confirm (Subscribe) button
         confirmButton = {
             TextButton(onClick = { onConfirm(qos, topic, subscriptionColor) }) {

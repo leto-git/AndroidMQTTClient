@@ -66,6 +66,7 @@ fun ConnectScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // TODO: Make connection items clickable in order to connect to server, edit or delete
+                // TODO: Add hint if no servers have been added yet
                 items(uiState.serversConnections) { connection ->
                     ConnectionItem(connection)
                 }

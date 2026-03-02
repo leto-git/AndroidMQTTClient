@@ -63,6 +63,7 @@ fun SubscribeScreen(
                 Text(stringResource(R.string.new_subscription))
             }
             // View Subscriptions button
+            // FIXME: Button text spreads over multiple lines on actual smartphone!
             Button(
                 onClick = { showSubscriptionsOverviewDialog = true },
                 modifier = Modifier.weight(1f)
@@ -120,6 +121,7 @@ fun SubscribeScreen(
 
 @Composable
 fun MessageItem(message: String) {
+    // TODO: Use message class not a simple string as function parameter
     // TODO: Message items should also display date and time of receipt, MQTT topic and QoS-Level
     Column(
         modifier = Modifier
