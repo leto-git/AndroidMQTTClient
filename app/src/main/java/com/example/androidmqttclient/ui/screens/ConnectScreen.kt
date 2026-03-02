@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.MQTTUiState
+import com.example.androidmqttclient.data.MQTTVersion
 import com.example.androidmqttclient.data.MqttServerConnection
 import com.example.androidmqttclient.ui.components.AddServerDialog
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
@@ -176,6 +177,8 @@ fun ConnectScreenPreview() {
             uiState = MQTTUiState(
                 serversConnections = listOf(
                     MqttServerConnection(
+                        isConnected = false,
+                        mqttVersion = MQTTVersion.V3_1_1,
                         serverName = "Test Server 1",
                         serverAddress = "localhost",
                         serverPort = 1234,
@@ -191,6 +194,7 @@ fun ConnectScreenPreview() {
                     ),
                     MqttServerConnection(
                         isConnected = true,
+                        mqttVersion = MQTTVersion.V3_1_1,
                         serverName = "Test Server 2",
                         serverAddress = "127.0.0.1",
                         serverPort = 5678,
