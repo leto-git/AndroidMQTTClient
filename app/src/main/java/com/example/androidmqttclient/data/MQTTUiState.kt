@@ -7,9 +7,13 @@ data class MQTTUiState(
     // Connection related properties
     val isConnected: Boolean = false,
     val connectedServer: String = "",
-    val serversConnections: List<MqttServerConnection> = listOf(),
+    val serverConnections: List<MqttServerConnection> = listOf(),
 
     // Subscription related properties
     val subscriptions: List<MqttSubscription> = listOf(),
     val messages: List<String> = listOf(),
+
+    // Status related properties
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 )

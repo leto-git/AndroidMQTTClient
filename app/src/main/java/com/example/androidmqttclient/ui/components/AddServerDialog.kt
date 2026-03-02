@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.data.MQTTVersion
 import com.example.androidmqttclient.data.MqttServerConnection
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
@@ -43,11 +44,11 @@ fun AddServerDialog(
     // TODO: MQTT 5.0 connection parameters
     var serverName by remember { mutableStateOf("") }
     var serverAddress by remember { mutableStateOf("") }
-    var serverPort by remember { mutableIntStateOf(0) }
+    var serverPort by remember { mutableIntStateOf(1883) }
     var clientID by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var keepAlive by remember { mutableIntStateOf(0) }
+    var keepAlive by remember { mutableIntStateOf(60) }
     var cleanSession by remember { mutableStateOf(false) }
     var willQos by remember { mutableIntStateOf(0) }
     var willRetain by remember { mutableStateOf(false) }
@@ -85,15 +86,15 @@ fun AddServerDialog(
                 val enableAdd = serverName.isNotBlank() && serverAddress.isNotBlank() && serverPort > 0 && clientID.isNotBlank()
 
                 // "Add" button
-                OutlinedButton(onClick = { onAdd(MqttServerConnection(false, serverName, serverAddress, serverPort,
+                OutlinedButton(onClick = { onAdd(MqttServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
                     clientID, username, password, keepAlive, cleanSession,
                     willQos, willRetain, willTopic, willMessage)) },
                     enabled = enableAdd
                 ) {
                     Text(stringResource(R.string.add))
                 }
-                // "Add and subscribe" button
-                Button(onClick = { onAddAndConnect(MqttServerConnection(false, serverName, serverAddress, serverPort,
+                // "Add and connect" button
+                Button(onClick = { onAddAndConnect(MqttServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
                     clientID, username, password, keepAlive, cleanSession,
                     willQos, willRetain, willTopic, willMessage)) },
                     enabled = enableAdd

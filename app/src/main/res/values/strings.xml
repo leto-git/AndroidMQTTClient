@@ -32,4 +32,6 @@
     <string name="message">Message</string>
     <string name="retain">Retain</string>
     <string name="qos">QoS</string>
+    <string name="no_servers_added">No servers added yet.</string>
+    <string name="tap_plus_to_start">Tap plus on the bottom right to add a server connection.</string>
 </resources>

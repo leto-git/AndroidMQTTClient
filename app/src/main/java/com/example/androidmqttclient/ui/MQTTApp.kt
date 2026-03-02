@@ -27,8 +27,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -37,6 +40,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.data.repository.MQTTRepository
 import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.viewmodel.MQTTViewModel
@@ -56,9 +60,18 @@ enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
  */
 @Composable
 fun MQTTApp(
-    viewModel: MQTTViewModel = viewModel(),
     navController: NavHostController = rememberNavController()
 ) {
+    // Create MQTTRepository and ViewModel
+    val mqttRepository = MQTTRepository(LocalContext.current)
+    val viewModel: MQTTViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T: ViewModel> create (modelClass: Class<T>): T {
+                return MQTTViewModel(mqttRepository) as T
+            }
+        }
+    )
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentScreen = MQTTScreen.valueOf(currentRoute ?: MQTTScreen.Connect.name)
@@ -93,7 +106,8 @@ fun MQTTApp(
                         .padding(dimensionResource(R.dimen.padding_medium)),
                     uiState = uiState,
                     onAddServer = { viewModel.addServer(it) },
-                    onConnect = { viewModel.connect(it) }
+                    onConnect = { viewModel.connect(it) },
+                    onErrorDismissed = { viewModel.clearError() }
                 )
             }
 

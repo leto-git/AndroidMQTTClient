@@ -8,6 +8,17 @@ android {
     namespace = "com.example.androidmqttclient"
     compileSdk = 36
 
+    packaging {
+        resources {
+            // Prevent errors from duplicate files from Eclipse Paho libraries mqtt v3-1 and mqtt v5
+            pickFirsts.add("bundle.properties")
+
+            excludes.add("META-INF/DEPENDENCIES")
+            excludes.add("META-INF/LICENSE")
+            excludes.add("META-INF/notice.txt")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.androidmqttclient"
         minSdk = 24
@@ -52,6 +63,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.navigation:navigation-compose:2.9.6")
     implementation("androidx.annotation:annotation:1.9.1")
+    // Eclipse Paho library for MQTT (3.1.1 and 5.0)
+    implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+    implementation("org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
