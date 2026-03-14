@@ -1,7 +1,7 @@
 package com.example.androidmqttclient.data
 
 /**
- * [MQTTVersion] is used to represent the MQTT version.
+ * Enum class for representing the MQTT version.
  */
 enum class MQTTVersion {
     V3_1_1,
@@ -9,7 +9,7 @@ enum class MQTTVersion {
 }
 
 /**
- * [MqttServerConnection] is the data class that is used to represent a server connection.
+ * Data class for representing a MQTT server connection.
  */
 data class MqttServerConnection(
     // Is client connected to this server?
@@ -21,7 +21,7 @@ data class MqttServerConnection(
     val serverName: String = "",
     val serverAddress: String = "",
     val serverPort: Int = 1883,
-    val clientID: String = "",
+    val clientID: String = "Android_" + System.currentTimeMillis().toString().takeLast(6),
     val username: String = "",
     val password: String = "",
     val keepAlive: Int = 60,

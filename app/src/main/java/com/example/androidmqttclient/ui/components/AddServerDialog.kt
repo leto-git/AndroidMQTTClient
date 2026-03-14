@@ -34,18 +34,24 @@ import com.example.androidmqttclient.data.MQTTVersion
 import com.example.androidmqttclient.data.MqttServerConnection
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
+/**
+ * Composable function for creating a new server.
+ */
 @Composable
 fun AddServerDialog(
     onDismiss: () -> Unit,
     onAdd: (MqttServerConnection) -> Unit,
-    onAddAndConnect: (MqttServerConnection) -> Unit
+    onAddAndConnect: (MqttServerConnection) -> Unit,
+    defaultClientId: String = remember {
+        "Android_" + System.currentTimeMillis().toString().takeLast(6)
+    }
 ) {
     // Connection parameters
     // TODO: MQTT 5.0 connection parameters
     var serverName by remember { mutableStateOf("") }
     var serverAddress by remember { mutableStateOf("") }
     var serverPort by remember { mutableIntStateOf(1883) }
-    var clientID by remember { mutableStateOf("") }
+    var clientID by remember { mutableStateOf(defaultClientId) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var keepAlive by remember { mutableIntStateOf(60) }
@@ -114,7 +120,7 @@ fun AddServerDialog(
 }
 
 /**
- * [AddServerContent] is the composable function for creating a new server.
+ * Composable function for creating a new server.
  * The composable had to be moved outside of the Dialog composable for the preview to work properly.
  */
 @Composable

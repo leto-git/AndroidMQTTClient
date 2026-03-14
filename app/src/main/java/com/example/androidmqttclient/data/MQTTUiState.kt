@@ -14,6 +14,7 @@ data class MQTTUiState(
     val messages: List<String> = listOf(),
 
     // Status related properties
-    val isLoading: Boolean = false,
+    val isConnecting: Boolean = false,
+    val isPublishing: Boolean = false,
     val errorMessage: String? = null
 )

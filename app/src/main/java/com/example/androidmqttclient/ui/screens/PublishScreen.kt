@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,14 +32,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.data.MQTTUiState
 import com.example.androidmqttclient.data.MqttMessage
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 import kotlinx.coroutines.launch
 
+/**
+ * Composable function for showing the publish screen.
+ */
 @Composable
 fun PublishScreen(
     modifier: Modifier = Modifier,
-    onPublish: (MqttMessage) -> Unit = {}
+    uiState: MQTTUiState,
+    onPublish: (MqttMessage) -> Unit = {},
+    onErrorDismissed: () -> Unit = {}
 ) {
     // State variables for input fields
     var topic by remember { mutableStateOf("") }
@@ -48,6 +55,19 @@ fun PublishScreen(
 
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Show error message if it is not null
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            snackBarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Long,
+                withDismissAction = true
+            )
+            // Clear error message after showing it
+            onErrorDismissed()
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -128,7 +148,8 @@ fun PublishScreen(
                 onClick = {
                     // TODO: Check for valid input
                     // Publish and show confirmation snackBar
-                    onPublish(MqttMessage(topic, qos, retain, message))
+                    onPublish(MqttMessage(topic, message, qos, retain ))
+                    // TODO: Only show snackBar if publish was actually successful
                     scope.launch {
                         snackBarHostState.showSnackbar(
                             message = "Message published",
@@ -136,10 +157,7 @@ fun PublishScreen(
                             withDismissAction = true
                         )
                     }
-                    // Reset input fields
-                    topic = ""
-                    qos = 0
-                    retain = false
+                    // Reset message field
                     message = ""
                 },
                 modifier = Modifier
@@ -161,7 +179,9 @@ fun PublishScreenPreview(
         Surface(
             modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
         ) {
-            PublishScreen()
+            PublishScreen(
+                uiState = MQTTUiState()
+            )
         }
     }
 }

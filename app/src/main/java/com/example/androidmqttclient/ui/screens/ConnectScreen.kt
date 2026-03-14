@@ -53,7 +53,7 @@ import com.example.androidmqttclient.ui.theme.ConnectionGreen
 import com.example.androidmqttclient.ui.theme.ConnectionRed
 
 /**
- * [ConnectScreen] is the composable function for showing the connect screen.
+ * Composable function for showing the connect screen.
  */
 @Composable
 fun ConnectScreen(
@@ -73,7 +73,8 @@ fun ConnectScreen(
         uiState.errorMessage?.let { message ->
             snackBarHostState.showSnackbar(
                 message = message,
-                duration = SnackbarDuration.Long
+                duration = SnackbarDuration.Long,
+                withDismissAction = true
             )
             // Clear error message after showing it
             onErrorDismissed()
@@ -158,7 +159,7 @@ fun ConnectScreen(
             }
 
             // Show loading indicator if connection is in progress
-            if( uiState.isLoading ) {
+            if( uiState.isConnecting ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

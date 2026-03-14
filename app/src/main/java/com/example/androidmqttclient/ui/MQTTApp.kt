@@ -63,7 +63,7 @@ fun MQTTApp(
     navController: NavHostController = rememberNavController()
 ) {
     // Create MQTTRepository and ViewModel
-    val mqttRepository = MQTTRepository(LocalContext.current)
+    val mqttRepository = MQTTRepository()
     val viewModel: MQTTViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T: ViewModel> create (modelClass: Class<T>): T {
@@ -128,9 +128,11 @@ fun MQTTApp(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_medium)),
+                    uiState = uiState,
                     onPublish = { mqttMessage ->
                         viewModel.publish(mqttMessage)
-                    }
+                    },
+                    onErrorDismissed = { viewModel.clearError() }
                 )
             }
 
