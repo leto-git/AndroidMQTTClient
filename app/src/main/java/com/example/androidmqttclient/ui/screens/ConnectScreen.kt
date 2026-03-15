@@ -41,12 +41,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.MQTTUiState
+import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.MQTTVersion
-import com.example.androidmqttclient.data.MqttServerConnection
+import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.ui.components.AddServerDialog
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 import com.example.androidmqttclient.ui.theme.ConnectionGreen
@@ -58,9 +59,9 @@ import com.example.androidmqttclient.ui.theme.ConnectionRed
 @Composable
 fun ConnectScreen(
     modifier: Modifier = Modifier,
-    uiState: MQTTUiState,
-    onAddServer: (MqttServerConnection) -> Unit = {},
-    onConnect: (MqttServerConnection) -> Unit = {},
+    uiState: AMCUiState,
+    onAddServer: (AMCServerConnection) -> Unit = {},
+    onConnect: (AMCServerConnection) -> Unit = {},
     onErrorDismissed: () -> Unit = {},
 ) {
     // State for snack bar used to show errors
@@ -93,7 +94,6 @@ fun ConnectScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(dimensionResource(R.dimen.padding_small))
             ) {
                 if (uiState.serverConnections.isEmpty()) {
                     // Empty State Hint
@@ -114,12 +114,14 @@ fun ConnectScreen(
                             Text(
                                 text = stringResource(R.string.no_servers_added),
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.outline
+                                color = MaterialTheme.colorScheme.outline,
+                                textAlign = TextAlign.Center
                             )
                             Text(
                                 text = stringResource(R.string.tap_plus_to_start),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outlineVariant
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -131,6 +133,7 @@ fun ConnectScreen(
                         // TODO: Handle clicks when already connected to a server
                         // TODO: Handle disconnections
                         // TODO: Handle long press to remove or edit server
+                        // TODO: Snackbar feedback after successful connection
 
                         items(uiState.serverConnections) { connection ->
                             ConnectionItem(
@@ -187,6 +190,7 @@ fun ConnectScreen(
     }
 
     // Show add server dialog
+    // TODO: Save new server to persistent storage
     if( showAddServerDialog ) {
         AddServerDialog(
             onDismiss = { showAddServerDialog = false },
@@ -205,7 +209,7 @@ fun ConnectScreen(
 
 @Composable
 fun ConnectionItem(
-    connection: MqttServerConnection,
+    connection: AMCServerConnection,
     onClick: () -> Unit
 ) {
     val color = if (connection.isConnected) ConnectionGreen else ConnectionRed
@@ -214,7 +218,6 @@ fun ConnectionItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = dimensionResource(R.dimen.padding_small))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .clip(shape)
             .clickable { onClick() }
@@ -234,7 +237,6 @@ fun ConnectionItem(
                     style = MaterialTheme.typography.headlineSmall
                 )
                 // Server address and port and indication if connected
-                // Server address and port
                 Column(
                     modifier = Modifier.padding(start = 24.dp)
                 ) {
@@ -272,9 +274,9 @@ fun ConnectionItem(
 fun ConnectScreenPreview() {
     AndroidMQTTClientTheme {
         ConnectScreen(
-            uiState = MQTTUiState(
+            uiState = AMCUiState(
                 serverConnections = listOf(
-                    MqttServerConnection(
+                    AMCServerConnection(
                         isConnected = false,
                         mqttVersion = MQTTVersion.V3_1_1,
                         serverName = "Test Server 1",
@@ -290,7 +292,7 @@ fun ConnectScreenPreview() {
                         willTopic = "",
                         willMessage = ""
                     ),
-                    MqttServerConnection(
+                    AMCServerConnection(
                         isConnected = true,
                         mqttVersion = MQTTVersion.V3_1_1,
                         serverName = "Test Server 2",

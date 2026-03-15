@@ -32,8 +32,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.MQTTUiState
-import com.example.androidmqttclient.data.MqttMessage
+import com.example.androidmqttclient.data.AMCUiState
+import com.example.androidmqttclient.data.AMCMessage
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 import kotlinx.coroutines.launch
 
@@ -43,8 +43,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun PublishScreen(
     modifier: Modifier = Modifier,
-    uiState: MQTTUiState,
-    onPublish: (MqttMessage) -> Unit = {},
+    uiState: AMCUiState,
+    onPublish: (AMCMessage) -> Unit = {},
     onErrorDismissed: () -> Unit = {}
 ) {
     // State variables for input fields
@@ -148,7 +148,7 @@ fun PublishScreen(
                 onClick = {
                     // TODO: Check for valid input
                     // Publish and show confirmation snackBar
-                    onPublish(MqttMessage(topic, message, qos, retain ))
+                    onPublish(AMCMessage(topic, message, qos, retain ))
                     // TODO: Only show snackBar if publish was actually successful
                     scope.launch {
                         snackBarHostState.showSnackbar(
@@ -180,7 +180,7 @@ fun PublishScreenPreview(
             modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
         ) {
             PublishScreen(
-                uiState = MQTTUiState()
+                uiState = AMCUiState()
             )
         }
     }

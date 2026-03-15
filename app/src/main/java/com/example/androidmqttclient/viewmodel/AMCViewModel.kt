@@ -3,12 +3,11 @@ package com.example.androidmqttclient.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.androidmqttclient.data.MQTTUiState
-import com.example.androidmqttclient.data.MqttMessage
-import com.example.androidmqttclient.data.MqttServerConnection
-import com.example.androidmqttclient.data.MqttSubscription
-import com.example.androidmqttclient.data.repository.MQTTRepository
-import kotlinx.coroutines.Dispatchers
+import com.example.androidmqttclient.data.AMCUiState
+import com.example.androidmqttclient.data.AMCMessage
+import com.example.androidmqttclient.data.AMCServerConnection
+import com.example.androidmqttclient.data.AMCSubscription
+import com.example.androidmqttclient.data.repository.AMCRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,25 +17,31 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel for the MQTT client.
  *
- * @param mqttRepository The repository for the MQTT client.
+ * @param amcRepository The repository for the MQTT client.
  */
-class MQTTViewModel(
-    private val mqttRepository: MQTTRepository
-): ViewModel() {
+class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     // StateFlow holding the current state of the MQTT client
     // _uiState is private to prevent external modification
-    private val _uiState = MutableStateFlow(MQTTUiState())
-    // uiState is a read-only property that exposes the current state
-    val uiState: StateFlow<MQTTUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(AMCUiState())
+    // Read-only property to exposes the current state
+    val uiState: StateFlow<AMCUiState> = _uiState.asStateFlow()
     // Tag for logging
     private val tag: String = "MQTTViewModel"
+
+    /**
+     * Initialize the ViewModel.
+     */
+    init {
+        // Observe incoming messages from the MQTT client
+        observeIncomingMessages()
+    }
 
     /**
      * Add a new server to the list of available servers.
      *
      * @param server The server to add.
      */
-    fun addServer(server: MqttServerConnection) {
+    fun addServer(server: AMCServerConnection) {
         // TODO: Check for validity of server data
         // TODO: Check if server already exists
         _uiState.update { currentState ->
@@ -51,7 +56,7 @@ class MQTTViewModel(
      *
      * @param server The server to remove.
      */
-    fun removeServer(server: MqttServerConnection) {
+    fun removeServer(server: AMCServerConnection) {
         TODO("Not yet implemented")
     }
 
@@ -60,14 +65,14 @@ class MQTTViewModel(
      *
      * @param server The server to connect to.
      */
-    fun connect(server: MqttServerConnection) {
+    fun connect(server: AMCServerConnection) {
         // Update UI state to indicate that connection is in progress
         _uiState.update { it.copy(isConnecting = true) }
 
         // Connect to server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
             Log.d(tag, "Connecting to ${server.serverName}")
-            val result = mqttRepository.connect(server)
+            val result = amcRepository.connect(server)
 
             result.onSuccess {
                 // Update UI state to indicate that connection was successful
@@ -95,13 +100,37 @@ class MQTTViewModel(
      *
      * @param subscription The subscription to add.
      */
-    fun addSubscription(subscription: MqttSubscription) {
+    fun addSubscription(subscription: AMCSubscription) {
         // TODO: Check for validity of subscription data (topic, qos, etc)
         // TODO: Check if subscription already exists
-        _uiState.update { currentState ->
-            currentState.copy(
-                subscriptions = currentState.subscriptions + subscription
-            )
+        // Update UI state to indicate that subscription is in progress
+        _uiState.update { it.copy(isSubscribing = true) }
+
+        // Subscribe to topic inside coroutine to prevent blocking the Main thread
+        viewModelScope.launch {
+            Log.d(tag, "Subscribing to ${subscription.topic}")
+
+            val result = amcRepository.subscribe(subscription)
+
+            result.onSuccess {
+                Log.d(tag, "Successfully subscribed to ${subscription.topic}")
+                // Update UI state to indicate that subscription was successful
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isSubscribing = false,
+                        subscriptions = currentState.subscriptions + subscription
+                    )
+                }
+            }.onFailure { error ->
+                Log.e(tag, "Error subscribing to ${subscription.topic}", error)
+                // Update UI state to indicate that subscription failed
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isSubscribing = false,
+                        errorMessage = error.localizedMessage ?: "Error subscribing"
+                    )
+                }
+            }
         }
     }
 
@@ -110,8 +139,23 @@ class MQTTViewModel(
      *
      * @param subscription The subscription to remove.
      */
-    fun removeSubscription(subscription: MqttSubscription) {
+    fun removeSubscription(subscription: AMCSubscription) {
         TODO("Not yet implemented")
+    }
+
+    /**
+     * Observe incoming messages from the MQTT client.
+     */
+    private fun observeIncomingMessages() {
+        viewModelScope.launch {
+            amcRepository.incomingMessages.collect { newMessage ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        receivedMessages = currentState.receivedMessages + newMessage
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -119,16 +163,16 @@ class MQTTViewModel(
      *
      * @param message The message to publish.
      */
-    fun publish(message: MqttMessage) {
+    fun publish(message: AMCMessage) {
         // Update UI state to indicate that publishing is in progress
         _uiState.update { it.copy(isPublishing = true) }
 
         // Publish message inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
             Log.d(tag, "Publishing to ${message.topic}")
-            val result = mqttRepository.publish(
+            val result = amcRepository.publish(
                 message.topic,
-                message.message,
+                message.payload,
                 message.qos,
                 message.retain
             )

@@ -1,9 +1,18 @@
 package com.example.androidmqttclient.data.repository
 
 import android.util.Log
-import com.example.androidmqttclient.data.MqttServerConnection
+import com.example.androidmqttclient.data.AMCMessage
+import com.example.androidmqttclient.data.AMCServerConnection
+import com.example.androidmqttclient.data.AMCSubscription
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
@@ -12,21 +21,33 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 
 /**
  * Repository for the MQTT client.
+ *
  * It is responsible for managing the MQTT client and its connection.
  */
-class MQTTRepository() {
+class AMCRepository() {
     // MQTT client instance
     private var mqttClient: MqttClient? = null
     // Tag for logging
     private val tag: String = "MQTTRepository"
+    // Shared flow for incoming messages
+    private val _incomingMessages = MutableSharedFlow<AMCMessage>(
+        replay = 0,
+        extraBufferCapacity = 32,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    // Expose shared flow as read-only property
+    val incomingMessages = _incomingMessages.asSharedFlow()
+    // Coroutine scope for repository operations
+    private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /**
      * Connect to a server.
      *
      * @param connection The connection object containing the server information.
+     *
      * @return A [Result] object indicating the success or failure of the connection.
      */
-    suspend fun connect(connection: MqttServerConnection): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun connect(connection: AMCServerConnection): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             // Build server address
             val rawAddress = connection.serverAddress
@@ -77,14 +98,29 @@ class MQTTRepository() {
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
                     Log.d(tag, "Connected to $serverURI")
                 }
+
                 override fun connectionLost(cause: Throwable?) {
                     Log.d(tag, "Connection lost", cause)
+                    // TODO: Handle connection loss, show error message
                 }
+
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
                     Log.d(tag, "Message arrived: $message")
-                    // TODO: Handle incoming messages
+                    // Translate to internal message format
+                    val mqttMessage = AMCMessage(
+                        topic = topic ?: "",
+                        payload = message?.toString() ?: "",
+                        qos = message?.qos ?: 0,
+                        retain = message?.isRetained ?: false,
+                        timestamp = System.currentTimeMillis()
+                    )
+                    // Emit message to shared flow, which will be collected by the ViewModel
+                    repositoryScope.launch {
+                        _incomingMessages.emit(mqttMessage)
+                    }
                 }
-                override fun deliveryComplete(token: org.eclipse.paho.client.mqttv3.IMqttDeliveryToken?) {
+
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
                 }
             })
 
@@ -119,17 +155,19 @@ class MQTTRepository() {
 
     /**
      * Subscribe to a topic.
-     * @param topic The topic to subscribe to.
-     * @param qos The quality of service to use when subscribing.
+     *
+     * @param subscription The subscription object containing the topic and qos.
+     *
+     * @return A [Result] object indicating the success or failure of the subscription.
      */
-    suspend fun subscribe(topic: String, qos: Int): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun subscribe(subscription: AMCSubscription): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            mqttClient?.subscribe(topic, qos)
+            mqttClient?.subscribe(subscription.topic, subscription.qos)
 
-            Log.d(tag, "Subscribed to $topic")
+            Log.d(tag, "Subscribed to $subscription.topic")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(tag, "Error subscribing to $topic", e)
+            Log.e(tag, "Error subscribing to $subscription.topic", e)
             Result.failure(e)
         }
     }
@@ -138,6 +176,7 @@ class MQTTRepository() {
      * Unsubscribe from a topic.
      *
      * @param topic The topic to unsubscribe from.
+     *
      * @return A [Result] object indicating the success or failure of the unsubscribe.
      */
     suspend fun unsubscribe(topic: String): Result<Unit> = withContext(Dispatchers.IO) {
@@ -159,6 +198,7 @@ class MQTTRepository() {
      * @param message The message to publish.
      * @param qos The quality of service to use when publishing.
      * @param retain Whether the message should be retained.
+     *
      * @return A [Result] object indicating the success or failure of the publish.
      */
     suspend fun publish(

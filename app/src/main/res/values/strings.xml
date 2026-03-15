@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">AndroidMQTTClient</string>
     <string name="connect">Connect</string>
+    <string name="date_format">yyyy-MM-dd HH:mm:ss</string>
     <string name="subscribe">Subscribe</string>
     <string name="publish">Publish</string>
     <string name="stats">Stats</string>
@@ -34,4 +35,5 @@
     <string name="qos">QoS</string>
     <string name="no_servers_added">No servers added yet.</string>
     <string name="tap_plus_to_start">Tap plus on the bottom right to add a server connection.</string>
+    <string name="no_subscriptions">No active subscriptions yet.</string>
 </resources>

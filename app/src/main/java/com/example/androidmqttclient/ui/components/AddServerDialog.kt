@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.MQTTVersion
-import com.example.androidmqttclient.data.MqttServerConnection
+import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
@@ -40,8 +40,8 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 @Composable
 fun AddServerDialog(
     onDismiss: () -> Unit,
-    onAdd: (MqttServerConnection) -> Unit,
-    onAddAndConnect: (MqttServerConnection) -> Unit,
+    onAdd: (AMCServerConnection) -> Unit,
+    onAddAndConnect: (AMCServerConnection) -> Unit,
     defaultClientId: String = remember {
         "Android_" + System.currentTimeMillis().toString().takeLast(6)
     }
@@ -92,7 +92,7 @@ fun AddServerDialog(
                 val enableAdd = serverName.isNotBlank() && serverAddress.isNotBlank() && serverPort > 0 && clientID.isNotBlank()
 
                 // "Add" button
-                OutlinedButton(onClick = { onAdd(MqttServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
+                OutlinedButton(onClick = { onAdd(AMCServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
                     clientID, username, password, keepAlive, cleanSession,
                     willQos, willRetain, willTopic, willMessage)) },
                     enabled = enableAdd
@@ -100,7 +100,7 @@ fun AddServerDialog(
                     Text(stringResource(R.string.add))
                 }
                 // "Add and connect" button
-                Button(onClick = { onAddAndConnect(MqttServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
+                Button(onClick = { onAddAndConnect(AMCServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
                     clientID, username, password, keepAlive, cleanSession,
                     willQos, willRetain, willTopic, willMessage)) },
                     enabled = enableAdd

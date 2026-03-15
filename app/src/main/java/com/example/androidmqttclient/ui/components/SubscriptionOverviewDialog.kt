@@ -27,15 +27,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.MqttSubscription
+import com.example.androidmqttclient.data.AMCSubscription
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
- * [SubscriptionsOverviewDialog] is the composable function for showing the currently active subscriptions.
+ * Composable function for showing the currently active subscriptions.
  */
 @Composable
 fun SubscriptionsOverviewDialog(
-    subscriptions: List<MqttSubscription> = listOf(),
+    subscriptions: List<AMCSubscription> = listOf(),
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -60,24 +60,37 @@ fun SubscriptionsOverviewDialog(
     )
 }
 
+/**
+ * Composable function for showing the currently active subscriptions.
+ *
+ * @param subscriptions The list of subscriptions to show.
+ */
 @Composable
-fun SubscriptionsOverviewContent(subscriptions: List<MqttSubscription>) {
-    HorizontalDivider()
+fun SubscriptionsOverviewContent(subscriptions: List<AMCSubscription>) {
+    if (subscriptions.isEmpty()) {
+        Text(
+            text = stringResource(R.string.no_subscriptions),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+    else {
+        HorizontalDivider()
 
-    // List of subscriptions
-    LazyColumn(
-        modifier = Modifier.heightIn(max = 400.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        // TODO: Make subscription items clickable so that the user can unsubscribe somehow
-        items(subscriptions) { subscription ->
-            SubscriptionItem(subscription)
+        // List of subscriptions
+        LazyColumn(
+            modifier = Modifier.heightIn(max = 400.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // TODO: Make subscription items clickable so that the user can unsubscribe somehow
+            items(subscriptions) { subscription ->
+                SubscriptionItem(subscription)
+            }
         }
     }
 }
 
 @Composable
-fun SubscriptionItem(subscription: MqttSubscription) {
+fun SubscriptionItem(subscription: AMCSubscription) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -122,12 +135,12 @@ fun SubscriptionsOverviewContentPreview() {
         ) {
             SubscriptionsOverviewContent(
                 subscriptions = listOf(
-                    MqttSubscription(
+                    AMCSubscription(
                         qos = 2,
                         topic = "test/topic/1",
                         color = 0xFFFF0000
                     ),
-                    MqttSubscription(
+                    AMCSubscription(
                         qos = 0,
                         topic = "test/topic/2",
                         color = 0xFF008000

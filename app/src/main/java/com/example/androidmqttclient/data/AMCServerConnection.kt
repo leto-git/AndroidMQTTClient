@@ -11,7 +11,7 @@ enum class MQTTVersion {
 /**
  * Data class for representing a MQTT server connection.
  */
-data class MqttServerConnection(
+data class AMCServerConnection(
     // Is client connected to this server?
     val isConnected: Boolean = false,
     // MQTT version

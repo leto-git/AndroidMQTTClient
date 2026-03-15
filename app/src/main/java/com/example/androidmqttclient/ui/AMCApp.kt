@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
@@ -40,10 +39,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.repository.MQTTRepository
+import com.example.androidmqttclient.data.repository.AMCRepository
 import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
-import com.example.androidmqttclient.viewmodel.MQTTViewModel
+import com.example.androidmqttclient.viewmodel.AMCViewModel
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
 
 enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
@@ -56,18 +55,18 @@ enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
 }
 
 /**
- * [MQTTApp] composable defining the general app layout
+ * Composable function defining the general app layout
  */
 @Composable
-fun MQTTApp(
+fun AMCApp(
     navController: NavHostController = rememberNavController()
 ) {
     // Create MQTTRepository and ViewModel
-    val mqttRepository = MQTTRepository()
-    val viewModel: MQTTViewModel = viewModel(
+    val amcRepository = AMCRepository()
+    val viewModel: AMCViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T: ViewModel> create (modelClass: Class<T>): T {
-                return MQTTViewModel(mqttRepository) as T
+                return AMCViewModel(amcRepository) as T
             }
         }
     )
@@ -103,7 +102,7 @@ fun MQTTApp(
                 ConnectScreen(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
+                        .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
                     onAddServer = { viewModel.addServer(it) },
                     onConnect = { viewModel.connect(it) },
@@ -116,7 +115,7 @@ fun MQTTApp(
                 SubscribeScreen(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
+                        .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
                     onAddSubscription = { viewModel.addSubscription(it) }
                 )
@@ -127,7 +126,7 @@ fun MQTTApp(
                 PublishScreen (
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(dimensionResource(R.dimen.padding_medium)),
+                        .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
                     onPublish = { mqttMessage ->
                         viewModel.publish(mqttMessage)
@@ -144,7 +143,7 @@ fun MQTTApp(
 }
 
 /**
- * [MQTTAppBar] composable for the top app bar showing current screen title etc.
+ * Composable function for the top app bar showing current screen title etc.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -174,7 +173,7 @@ fun MQTTAppBar(
 }
 
 /**
- * [MQTTBottomBar] composable showing different icons for screen navigation
+ * Composable showing different icons for screen navigation
  */
 @Composable
 fun MQTTBottomBar(
