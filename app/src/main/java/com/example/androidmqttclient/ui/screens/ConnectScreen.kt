@@ -233,7 +233,7 @@ fun ConnectionItem(
             ) {
                 // Server name
                 Text(
-                    text = connection.serverName,
+                    text = connection.connectionName,
                     style = MaterialTheme.typography.headlineSmall
                 )
                 // Server address and port and indication if connected
@@ -279,7 +279,7 @@ fun ConnectScreenPreview() {
                     AMCServerConnection(
                         isConnected = false,
                         mqttVersion = MQTTVersion.V3_1_1,
-                        serverName = "Test Server 1",
+                        connectionName = "Test Server 1",
                         serverAddress = "localhost",
                         serverPort = 1234,
                         clientID = "test",
@@ -295,7 +295,7 @@ fun ConnectScreenPreview() {
                     AMCServerConnection(
                         isConnected = true,
                         mqttVersion = MQTTVersion.V3_1_1,
-                        serverName = "Test Server 2",
+                        connectionName = "Test Server 2",
                         serverAddress = "127.0.0.1",
                         serverPort = 5678,
                         clientID = "test",

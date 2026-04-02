@@ -78,7 +78,8 @@ fun SubscribeScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = stringResource(R.string.new_subscription).replace(" ", "\n"),
+                    text = stringResource(R.string.new_subscription)
+                        .replace(" ", "\n"),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -89,7 +90,8 @@ fun SubscribeScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = stringResource(R.string.view_subscriptions).replace(" ", "\n"),
+                    text = stringResource(R.string.view_subscriptions)
+                        .replace(" ", "\n"),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -226,11 +228,16 @@ fun SubscribeScreenPreview() {
     AndroidMQTTClientTheme {
         SubscribeScreen(
             uiState = AMCUiState(
-                subscriptions = listOf(AMCSubscription(0, "test/topic", 0xFFFF0000)),
+                subscriptions = listOf(
+                    AMCSubscription(0, "test/topic", 0xFFFF0000)
+                ),
                 receivedMessages = listOf(
-                    AMCMessage("test/topic", "Test message 1", 0, false, timestamp = 0),
-                    AMCMessage("test/topic", "Test message 2", 1, false, timestamp = 12345),
-                    AMCMessage("test/topic", "Test message 3", 2, false, timestamp = 123456789)
+                    AMCMessage("test/topic", "Test message 1",
+                        0, false, timestamp = 0),
+                    AMCMessage("test/topic", "Test message 2",
+                        1, false, timestamp = 12345),
+                    AMCMessage("test/topic", "Test message 3",
+                        2, false, timestamp = 123456789)
                 )
             ),
             onAddSubscription = {}

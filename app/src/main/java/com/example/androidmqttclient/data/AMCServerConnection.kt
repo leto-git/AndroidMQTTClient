@@ -1,5 +1,9 @@
 package com.example.androidmqttclient.data
 
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
 /**
  * Enum class for representing the MQTT version.
  */
@@ -11,16 +15,26 @@ enum class MQTTVersion {
 /**
  * Data class for representing a MQTT server connection.
  */
+@Entity(
+    tableName = "server_connections",
+    indices = [Index(value = ["connectionName"], unique = true)]
+)
 data class AMCServerConnection(
+    // Primary key for the Room database
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    // Connection name
+    val connectionName: String = "",
+
     // Is client connected to this server?
     val isConnected: Boolean = false,
     // MQTT version
     val mqttVersion: MQTTVersion = MQTTVersion.V3_1_1,
 
     // Connection parameters
-    val serverName: String = "",
     val serverAddress: String = "",
     val serverPort: Int = 1883,
+    // FIXME: client ID needs to be unique and should not be part of the server connection
     val clientID: String = "Android_" + System.currentTimeMillis().toString().takeLast(6),
     val username: String = "",
     val password: String = "",

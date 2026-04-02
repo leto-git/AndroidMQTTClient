@@ -47,7 +47,8 @@ class AMCRepository() {
      *
      * @return A [Result] object indicating the success or failure of the connection.
      */
-    suspend fun connect(connection: AMCServerConnection): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun connect(connection: AMCServerConnection): Result<Unit> =
+        withContext(Dispatchers.IO) {
         try {
             // Build server address
             val rawAddress = connection.serverAddress
@@ -131,7 +132,7 @@ class AMCRepository() {
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(tag, "Error connecting to server ${connection.serverName}", e)
+            Log.e(tag, "Error connecting to server ${connection.connectionName}", e)
             Result.failure(e)
         }
     }
@@ -160,7 +161,8 @@ class AMCRepository() {
      *
      * @return A [Result] object indicating the success or failure of the subscription.
      */
-    suspend fun subscribe(subscription: AMCSubscription): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun subscribe(subscription: AMCSubscription): Result<Unit> =
+        withContext(Dispatchers.IO) {
         try {
             mqttClient?.subscribe(subscription.topic, subscription.qos)
 
@@ -179,7 +181,8 @@ class AMCRepository() {
      *
      * @return A [Result] object indicating the success or failure of the unsubscribe.
      */
-    suspend fun unsubscribe(topic: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun unsubscribe(topic: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
         try {
             mqttClient?.unsubscribe(topic)
             Log.d(tag, "Unsubscribed from $topic")

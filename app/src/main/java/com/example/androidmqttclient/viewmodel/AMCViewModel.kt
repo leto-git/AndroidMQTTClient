@@ -71,7 +71,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
 
         // Connect to server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
-            Log.d(tag, "Connecting to ${server.serverName}")
+            Log.d(tag, "Connecting to ${server.connectionName}")
             val result = amcRepository.connect(server)
 
             result.onSuccess {
@@ -80,9 +80,9 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     currentState.copy(
                         isConnecting = false,
                         isConnected = true,
-                        connectedServer = server.serverName,
+                        connectedServer = server.connectionName,
                         serverConnections = currentState.serverConnections.map {
-                            if (it.serverName == server.serverName) it.copy(isConnected = true) else it
+                            if (it.connectionName == server.connectionName) it.copy(isConnected = true) else it
                         }
                     )
                 }
@@ -145,6 +145,9 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
 
     /**
      * Observe incoming messages from the MQTT client.
+     *
+     * This function collects incoming messages from the shared flow in the repository
+     * and updates the UI state accordingly.
      */
     private fun observeIncomingMessages() {
         viewModelScope.launch {
