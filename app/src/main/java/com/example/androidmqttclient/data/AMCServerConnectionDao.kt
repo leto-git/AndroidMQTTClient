@@ -3,6 +3,7 @@ package com.example.androidmqttclient.data
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -12,18 +13,45 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface AMCServerConnectionDao {
-    @Insert
+    /**
+     * Insert a new server connection into the database.
+     *
+     * @param connection The server connection to insert.
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertServerConnection(connection: AMCServerConnection)
 
+    /**
+     * Update an existing server connection in the database.
+     *
+     * @param connection The server connection to update.
+     */
     @Update
     suspend fun updateServerConnection(connection: AMCServerConnection)
 
+    /**
+     * Delete a server connection from the database.
+     *
+     * @param connection The server connection to delete.
+     */
     @Delete
     suspend fun deleteServerConnection(connection: AMCServerConnection)
 
+    /**
+     * Get all server connections from the database.
+     *
+     * @return A flow of all server connections.
+     */
     @Query("SELECT * FROM server_connections ORDER BY connectionName ASC")
     fun getAllServerConnections(): Flow<List<AMCServerConnection>>
 
+    /**
+     * Get a server connection by its ID.
+     *
+     * @param id The ID of the server connection to retrieve.
+     *
+     * @return A flow of the server connection.
+     */
     @Query("SELECT * FROM server_connections WHERE id = :id")
     fun getServerConnectionById(id: Int): Flow<AMCServerConnection>
 }

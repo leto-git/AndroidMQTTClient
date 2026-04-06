@@ -90,19 +90,31 @@ fun AddServerDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val enableAdd = serverName.isNotBlank() && serverAddress.isNotBlank() && serverPort > 0 && clientID.isNotBlank()
-
+                val newConnection = AMCServerConnection(
+                    connectionName = serverName,
+                    mqttVersion = MQTTVersion.V3_1_1,
+                    serverAddress = serverAddress,
+                    serverPort = serverPort,
+                    clientID = clientID,
+                    username = username,
+                    password = password,
+                    keepAlive = keepAlive,
+                    cleanSession = cleanSession,
+                    willQos = willQos,
+                    willRetain = willRetain,
+                    willTopic = willTopic,
+                    willMessage = willMessage
+                )
                 // "Add" button
-                OutlinedButton(onClick = { onAdd(AMCServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
-                    clientID, username, password, keepAlive, cleanSession,
-                    willQos, willRetain, willTopic, willMessage)) },
+                OutlinedButton(
+                    onClick = { onAdd(newConnection) },
                     enabled = enableAdd
                 ) {
                     Text(stringResource(R.string.add))
                 }
                 // "Add and connect" button
-                Button(onClick = { onAddAndConnect(AMCServerConnection(false, MQTTVersion.V3_1_1, serverName, serverAddress, serverPort,
-                    clientID, username, password, keepAlive, cleanSession,
-                    willQos, willRetain, willTopic, willMessage)) },
+                Button(
+                    onClick = { onAddAndConnect(newConnection) },
                     enabled = enableAdd
                 ) {
                     Text(stringResource(R.string.add_and_connect))

@@ -136,8 +136,11 @@ fun ConnectScreen(
                         // TODO: Snackbar feedback after successful connection
 
                         items(uiState.serverConnections) { connection ->
+                            val isCurrentConnection = uiState.connectedServer?.id == connection.id
+
                             ConnectionItem(
                                 connection,
+                                isConnected = isCurrentConnection,
                                 onClick = { onConnect(connection) }
                             )
                         }
@@ -210,9 +213,10 @@ fun ConnectScreen(
 @Composable
 fun ConnectionItem(
     connection: AMCServerConnection,
+    isConnected: Boolean,
     onClick: () -> Unit
 ) {
-    val color = if (connection.isConnected) ConnectionGreen else ConnectionRed
+    val color = if (isConnected) ConnectionGreen else ConnectionRed
     val shape = MaterialTheme.shapes.medium
 
     Column(
@@ -277,7 +281,6 @@ fun ConnectScreenPreview() {
             uiState = AMCUiState(
                 serverConnections = listOf(
                     AMCServerConnection(
-                        isConnected = false,
                         mqttVersion = MQTTVersion.V3_1_1,
                         connectionName = "Test Server 1",
                         serverAddress = "localhost",
@@ -293,7 +296,6 @@ fun ConnectScreenPreview() {
                         willMessage = ""
                     ),
                     AMCServerConnection(
-                        isConnected = true,
                         mqttVersion = MQTTVersion.V3_1_1,
                         connectionName = "Test Server 2",
                         serverAddress = "127.0.0.1",

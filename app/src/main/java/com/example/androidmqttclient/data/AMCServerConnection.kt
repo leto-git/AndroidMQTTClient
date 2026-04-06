@@ -23,11 +23,9 @@ data class AMCServerConnection(
     // Primary key for the Room database
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    // Connection name
+    // Connection name (must be unique!)
     val connectionName: String = "",
 
-    // Is client connected to this server?
-    val isConnected: Boolean = false,
     // MQTT version
     val mqttVersion: MQTTVersion = MQTTVersion.V3_1_1,
 

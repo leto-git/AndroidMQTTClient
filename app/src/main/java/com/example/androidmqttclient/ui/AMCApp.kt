@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
@@ -39,6 +40,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.data.AMCDatabase
 import com.example.androidmqttclient.data.repository.AMCRepository
 import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
@@ -61,8 +63,11 @@ enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
 fun AMCApp(
     navController: NavHostController = rememberNavController()
 ) {
-    // Create MQTTRepository and ViewModel
-    val amcRepository = AMCRepository()
+    // Create Database instance
+    val database = AMCDatabase.getDatabase(context = LocalContext.current)
+    // Create MQTTRepository
+    val amcRepository = AMCRepository(database.serverConnectionDao())
+    // Create ViewModel
     val viewModel: AMCViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T: ViewModel> create (modelClass: Class<T>): T {
