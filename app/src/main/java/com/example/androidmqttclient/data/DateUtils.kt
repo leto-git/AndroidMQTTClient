@@ -11,7 +11,7 @@ import java.util.Locale
  *
  * @return The formatted string.
  */
-fun formatTimestamp(timestamp: Long, pattern: String): String {
+fun formatTimestamp(timestamp: Long, pattern: String = "yyyy-MM-dd HH:mm:ss"): String {
     val sdf = SimpleDateFormat(pattern, Locale.getDefault())
     return sdf.format(timestamp)
 }

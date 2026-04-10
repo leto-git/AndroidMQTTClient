@@ -12,7 +12,6 @@
     <string name="close">Close</string>
     <string name="color_for_subscription_messages">Color for subscription messages</string>
     <string name="connect">Connect</string>
-    <string name="date_format">yyyy-MM-dd HH:mm:ss</string>
     <string name="delete">Delete</string>
     <string name="delete_connection">Delete connection</string>
     <string name="disconnect">Disconnect</string>
@@ -37,10 +36,11 @@
     <string name="retain">Retain</string>
     <string name="save">Save</string>
     <string name="server_name">Server Name</string>
-    <string name="stats">Stats</string>
+    <string name="status">Status</string>
     <string name="subscribe">Subscribe</string>
     <string name="tap_plus_to_start">Tap plus on the bottom right to add a server connection.</string>
     <string name="topic">Topic</string>
     <string name="user_name_optional">User name (optional)</string>
     <string name="view_subscriptions">View Subscriptions</string>
+    <string name="event_log">Event log</string>
 </resources>

@@ -13,9 +13,13 @@ data class AMCUiState(
     val subscriptions: List<AMCSubscription> = listOf(),
     val receivedMessages: List<AMCMessage> = listOf(),
 
+    // Publish related properties
+    val publishedMessages: List<AMCMessage> = listOf(),
+
     // Status related properties
     val isConnecting: Boolean = false,
     val isSubscribing: Boolean = false,
     val isPublishing: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val logMessages: List<AMCLogEntry> = listOf()
 )

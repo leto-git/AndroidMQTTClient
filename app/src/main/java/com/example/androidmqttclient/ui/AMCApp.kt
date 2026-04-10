@@ -49,6 +49,7 @@ import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.ui.screens.AddServerConnectionScreen
 import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen
+import com.example.androidmqttclient.ui.screens.StatusScreen
 import com.example.androidmqttclient.viewmodel.AMCViewModel
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
 
@@ -65,13 +66,13 @@ sealed class MQTTScreen (
     val icon: ImageVector
 ) {
     object Connect : MQTTScreen("connect", R.string.connect, Icons.Default.Call)
+    object Subscribe : MQTTScreen("subscribe", R.string.subscribe, Icons.Default.Add)
     object AddServer: MQTTScreen("add_server", R.string.add_server_screen, Icons.Default.Add)
     object EditServer: MQTTScreen("edit_server/{serverId}", R.string.edit_server_screen, Icons.Default.Edit) {
         fun createRoute(serverId: Int) = "edit_server/$serverId"
     }
-    object Subscribe : MQTTScreen("subscribe", R.string.subscribe, Icons.Default.Add)
     object Publish : MQTTScreen("publish", R.string.publish, Icons.AutoMirrored.Default.Send)
-    object Stats : MQTTScreen("stats", R.string.stats, Icons.AutoMirrored.Filled.List)
+    object Status : MQTTScreen("status", R.string.status, Icons.AutoMirrored.Filled.List)
     object Info : MQTTScreen("info", R.string.info, Icons.Default.Info)
 
     companion object {
@@ -84,7 +85,7 @@ sealed class MQTTScreen (
                 "edit_server" -> EditServer
                 Subscribe.route -> Subscribe
                 Publish.route -> Publish
-                Stats.route -> Stats
+                Status.route -> Status
                 Info.route -> Info
                 else -> Connect
             }
@@ -229,8 +230,17 @@ fun AMCApp(
                 )
             }
 
+            // Status screen
+            composable(route = MQTTScreen.Status.route) {
+                StatusScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(R.dimen.padding_small)),
+                    uiState = uiState
+                )
+            }
+
             // TODO: Replace placeholders with actual screens
-            composable(route = MQTTScreen.Stats.route) { PlaceholderScreen("Stats") }
             composable(route = MQTTScreen.Info.route) { PlaceholderScreen("Info") }
         }
     }
@@ -279,7 +289,7 @@ fun MQTTBottomBar(
             MQTTScreen.Connect,
             MQTTScreen.Subscribe,
             MQTTScreen.Publish,
-            MQTTScreen.Stats,
+            MQTTScreen.Status,
             MQTTScreen.Info
         )
         bottomTabScreens.forEach { screen ->
