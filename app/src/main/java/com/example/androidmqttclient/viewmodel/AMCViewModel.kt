@@ -32,22 +32,60 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      * Initialize the ViewModel.
      */
     init {
+        // Observe server connections from the database
+        observeServerConnections()
         // Observe incoming messages from the MQTT client
         observeIncomingMessages()
     }
 
     /**
+     * Observe incoming messages from the MQTT client.
+     *
+     * This function collects incoming messages from the shared flow in the repository
+     * and updates the UI state accordingly.
+     */
+    private fun observeIncomingMessages() {
+        viewModelScope.launch {
+            amcRepository.incomingMessages.collect { newMessage ->
+                // Update the UI State
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        receivedMessages = currentState.receivedMessages + newMessage
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Observe server connections from the database.
+     *
+     * This function collects server connections from the database and updates the UI state
+     * accordingly.
+     */
+    private fun observeServerConnections() {
+        viewModelScope.launch {
+            amcRepository.serverConnections.collect { connections ->
+                // Update the UI State
+                _uiState.update { currentState ->
+                    currentState.copy(serverConnections = connections)
+                }
+            }
+        }
+    }
+
+    /**
      * Add a new server to the list of available servers.
      *
-     * @param server The server to add.
+     * @param connection The server to add.
      */
-    fun addServer(server: AMCServerConnection) {
+    fun addServer(connection: AMCServerConnection) {
         // TODO: Check for validity of server data
         // TODO: Check if server already exists
-        _uiState.update { currentState ->
-            currentState.copy(
-                serverConnections = currentState.serverConnections + server
-            )
+        viewModelScope.launch {
+            // Just push to the DB. The 'collect' block above
+            // will notice the change and update the UI for you!
+            amcRepository.insertServerConnection(connection)
         }
     }
 
@@ -57,22 +95,35 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      * @param server The server to remove.
      */
     fun removeServer(server: AMCServerConnection) {
-        TODO("Not yet implemented")
+        viewModelScope.launch {
+            amcRepository.deleteServer(server)
+        }
+    }
+
+    /**
+     * Update an existing server.
+     *
+     * @param server The server to update.
+     */
+    fun updateServer(server: AMCServerConnection) {
+        viewModelScope.launch {
+            amcRepository.updateServer(server)
+        }
     }
 
     /**
      * Connect to a server.
      *
-     * @param server The server to connect to.
+     * @param connection The server to connect to.
      */
-    fun connect(server: AMCServerConnection) {
+    fun connect(connection: AMCServerConnection) {
         // Update UI state to indicate that connection is in progress
         _uiState.update { it.copy(isConnecting = true) }
 
         // Connect to server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
-            Log.d(tag, "Connecting to ${server.serverName}")
-            val result = amcRepository.connect(server)
+            Log.d(tag, "Connecting to ${connection.connectionName}")
+            val result = amcRepository.connect(connection)
 
             result.onSuccess {
                 // Update UI state to indicate that connection was successful
@@ -80,10 +131,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     currentState.copy(
                         isConnecting = false,
                         isConnected = true,
-                        connectedServer = server.serverName,
-                        serverConnections = currentState.serverConnections.map {
-                            if (it.serverName == server.serverName) it.copy(isConnected = true) else it
-                        }
+                        connectedServer = connection,
                     )
                 }
             }.onFailure { error ->
@@ -91,6 +139,31 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 _uiState.update { it.copy(
                     isConnecting = false,
                     errorMessage = error.localizedMessage ?: "Connection failed") }
+            }
+        }
+    }
+
+    /**
+     * Disconnect from the current server.
+     */
+    fun disconnect() {
+        viewModelScope.launch {
+            Log.d(tag, "Disconnecting from ${uiState.value.connectedServer?.connectionName}")
+            val result = amcRepository.disconnect()
+            result.onSuccess {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isConnected = false,
+                        connectedServer = null
+                    )
+                }
+            }.onFailure {
+                Log.e(tag, "Error disconnecting from server", it)
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        errorMessage = it.localizedMessage ?: "Error disconnecting from server"
+                    )
+                }
             }
         }
     }
@@ -141,21 +214,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      */
     fun removeSubscription(subscription: AMCSubscription) {
         TODO("Not yet implemented")
-    }
-
-    /**
-     * Observe incoming messages from the MQTT client.
-     */
-    private fun observeIncomingMessages() {
-        viewModelScope.launch {
-            amcRepository.incomingMessages.collect { newMessage ->
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        receivedMessages = currentState.receivedMessages + newMessage
-                    )
-                }
-            }
-        }
     }
 
     /**

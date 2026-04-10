@@ -3,11 +3,13 @@ package com.example.androidmqttclient.data.repository
 import android.util.Log
 import com.example.androidmqttclient.data.AMCMessage
 import com.example.androidmqttclient.data.AMCServerConnection
+import com.example.androidmqttclient.data.AMCServerConnectionDao
 import com.example.androidmqttclient.data.AMCSubscription
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -22,13 +24,14 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 /**
  * Repository for the MQTT client.
  *
- * It is responsible for managing the MQTT client and its connection.
+ * It is responsible for managing the MQTT client and the server connections.
  */
-class AMCRepository() {
-    // MQTT client instance
+class AMCRepository(
+    private val serverConnectionDao: AMCServerConnectionDao
+) {
+    // Paho MQTT client instance
     private var mqttClient: MqttClient? = null
-    // Tag for logging
-    private val tag: String = "MQTTRepository"
+
     // Shared flow for incoming messages
     private val _incomingMessages = MutableSharedFlow<AMCMessage>(
         replay = 0,
@@ -40,6 +43,47 @@ class AMCRepository() {
     // Coroutine scope for repository operations
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    // Flow for server connections
+    val serverConnections: Flow<List<AMCServerConnection>> =
+        serverConnectionDao.getAllServerConnections()
+
+    // Tag for logging
+    private val tag: String = "MQTTRepository"
+
+    /**
+     * Insert a new server connection into the database.
+     *
+     * @param connection The server connection to insert.
+     */
+    suspend fun insertServerConnection(connection: AMCServerConnection) {
+        serverConnectionDao.insertServerConnection(connection)
+    }
+
+    /**
+     * Delete a server connection from the database.
+     *
+     * @param connection The server connection to delete.
+     */
+    suspend fun deleteServer(connection: AMCServerConnection) {
+        serverConnectionDao.deleteServerConnection(connection)
+    }
+
+    /**
+     * Update a server connection in the database.
+     *
+     * @param connection The server connection to update.
+     */
+    suspend fun updateServer(connection: AMCServerConnection) {
+        serverConnectionDao.updateServerConnection(connection)
+    }
+
+    /**
+     *
+     */
+    fun getServerById(id: Int): Flow<AMCServerConnection> {
+        return serverConnectionDao.getServerConnectionById(id)
+    }
+
     /**
      * Connect to a server.
      *
@@ -47,7 +91,8 @@ class AMCRepository() {
      *
      * @return A [Result] object indicating the success or failure of the connection.
      */
-    suspend fun connect(connection: AMCServerConnection): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun connect(connection: AMCServerConnection): Result<Unit> =
+        withContext(Dispatchers.IO) {
         try {
             // Build server address
             val rawAddress = connection.serverAddress
@@ -131,7 +176,7 @@ class AMCRepository() {
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(tag, "Error connecting to server ${connection.serverName}", e)
+            Log.e(tag, "Error connecting to server ${connection.connectionName}", e)
             Result.failure(e)
         }
     }
@@ -160,7 +205,8 @@ class AMCRepository() {
      *
      * @return A [Result] object indicating the success or failure of the subscription.
      */
-    suspend fun subscribe(subscription: AMCSubscription): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun subscribe(subscription: AMCSubscription): Result<Unit> =
+        withContext(Dispatchers.IO) {
         try {
             mqttClient?.subscribe(subscription.topic, subscription.qos)
 
@@ -179,7 +225,8 @@ class AMCRepository() {
      *
      * @return A [Result] object indicating the success or failure of the unsubscribe.
      */
-    suspend fun unsubscribe(topic: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun unsubscribe(topic: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
         try {
             mqttClient?.unsubscribe(topic)
             Log.d(tag, "Unsubscribed from $topic")

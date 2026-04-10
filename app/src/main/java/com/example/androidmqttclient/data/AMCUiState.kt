@@ -6,7 +6,7 @@ package com.example.androidmqttclient.data
 data class AMCUiState(
     // Connection related properties
     val isConnected: Boolean = false,
-    val connectedServer: String = "",
+    val connectedServer: AMCServerConnection? = null,
     val serverConnections: List<AMCServerConnection> = listOf(),
 
     // Subscription related properties
