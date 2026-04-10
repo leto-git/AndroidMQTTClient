@@ -32,8 +32,7 @@ data class AMCServerConnection(
     // Connection parameters
     val serverAddress: String = "",
     val serverPort: Int = 1883,
-    // FIXME: client ID needs to be unique and should not be part of the server connection
-    val clientID: String = "Android_" + System.currentTimeMillis().toString().takeLast(6),
+    val clientID: String = "AMC_" + System.currentTimeMillis().toString().takeLast(6),
     val username: String = "",
     val password: String = "",
     val keepAlive: Int = 60,

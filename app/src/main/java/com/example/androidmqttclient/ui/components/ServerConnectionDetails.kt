@@ -8,21 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,116 +21,28 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.MQTTVersion
-import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
- * Composable function for creating a new server.
+ * Composable function for displaying the server connection details.
  */
 @Composable
-fun AddServerDialog(
-    onDismiss: () -> Unit,
-    onAdd: (AMCServerConnection) -> Unit,
-    onAddAndConnect: (AMCServerConnection) -> Unit,
-    defaultClientId: String = remember {
-        "Android_" + System.currentTimeMillis().toString().takeLast(6)
-    }
-) {
-    // Connection parameters
-    // TODO: MQTT 5.0 connection parameters
-    var serverName by remember { mutableStateOf("") }
-    var serverAddress by remember { mutableStateOf("") }
-    var serverPort by remember { mutableIntStateOf(1883) }
-    var clientID by remember { mutableStateOf(defaultClientId) }
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var keepAlive by remember { mutableIntStateOf(60) }
-    var cleanSession by remember { mutableStateOf(false) }
-    var willQos by remember { mutableIntStateOf(0) }
-    var willRetain by remember { mutableStateOf(false) }
-    var willTopic by remember { mutableStateOf("") }
-    var willMessage by remember { mutableStateOf("") }
+fun ServerConnectionDetails(
+    serverName: String,
+    serverAddress: String,
+    serverPort: Int,
+    clientID: String,
+    username: String,
+    password: String,
+    keepAlive: Int,
+    cleanSession: Boolean,
+    willQos: Int,
+    willRetain: Boolean,
+    willTopic: String,
+    willMessage: String,
 
-    AlertDialog(
-        onDismissRequest = { },
-        title = { Text(stringResource(R.string.add_server)) },
-        text = {
-            AddServerContent(
-                serverName, serverAddress, serverPort,
-                clientID, username, password, keepAlive, cleanSession,
-                willQos, willRetain, willTopic, willMessage,
-                onServerNameChange = { serverName = it },
-                onServerAddressChange = { serverAddress = it},
-                onServerPortChange = { serverPort = it },
-                onClientIDChange = { clientID = it },
-                onUsernameChange = { username = it },
-                onPasswordChange = { password = it },
-                onKeepAliveChange = { keepAlive = it },
-                onCleanSessionChange = { cleanSession = it },
-                onWillQosChange = { willQos = it },
-                onWillRetainChange = { willRetain = it },
-                onWillTopicChange = { willTopic = it },
-                onWillMessageChange = { willMessage = it }
-            )
-        },
+    editingEnabled: Boolean,
 
-        confirmButton = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val enableAdd = serverName.isNotBlank() && serverAddress.isNotBlank() && serverPort > 0 && clientID.isNotBlank()
-                val newConnection = AMCServerConnection(
-                    connectionName = serverName,
-                    mqttVersion = MQTTVersion.V3_1_1,
-                    serverAddress = serverAddress,
-                    serverPort = serverPort,
-                    clientID = clientID,
-                    username = username,
-                    password = password,
-                    keepAlive = keepAlive,
-                    cleanSession = cleanSession,
-                    willQos = willQos,
-                    willRetain = willRetain,
-                    willTopic = willTopic,
-                    willMessage = willMessage
-                )
-                // "Add" button
-                OutlinedButton(
-                    onClick = { onAdd(newConnection) },
-                    enabled = enableAdd
-                ) {
-                    Text(stringResource(R.string.add))
-                }
-                // "Add and connect" button
-                Button(
-                    onClick = { onAddAndConnect(newConnection) },
-                    enabled = enableAdd
-                ) {
-                    Text(stringResource(R.string.add_and_connect))
-                }
-            }
-        },
-
-        // Cancel button
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
-    )
-}
-
-/**
- * Composable function for creating a new server.
- * The composable had to be moved outside of the Dialog composable for the preview to work properly.
- */
-@Composable
-fun AddServerContent(
-    serverName: String, serverAddress: String, serverPort: Int,
-    clientID: String, username: String, password: String, keepAlive: Int, cleanSession: Boolean,
-    willQos: Int, willRetain: Boolean, willTopic: String, willMessage: String,
     onServerNameChange: (String) -> Unit,
     onServerAddressChange: (String) -> Unit,
     onServerPortChange: (Int) -> Unit,
@@ -164,6 +67,7 @@ fun AddServerContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
+            enabled = editingEnabled,
             singleLine = true
         )
         // Server address and port input
@@ -179,6 +83,7 @@ fun AddServerContent(
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
+                enabled = editingEnabled,
                 singleLine = true
             )
             // Server port input
@@ -194,6 +99,7 @@ fun AddServerContent(
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
+                enabled = editingEnabled,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
@@ -205,7 +111,8 @@ fun AddServerContent(
             label = { Text(stringResource(R.string.client_id)) },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(64.dp),
+            enabled = editingEnabled,
         )
         // Username
         OutlinedTextField(
@@ -215,6 +122,7 @@ fun AddServerContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
+            enabled = editingEnabled,
             singleLine = true
         )
         // Password
@@ -225,6 +133,7 @@ fun AddServerContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
+            enabled = editingEnabled,
             singleLine = true
         )
         // Keep alive and clean session
@@ -246,6 +155,7 @@ fun AddServerContent(
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
+                enabled = editingEnabled,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
@@ -259,10 +169,11 @@ fun AddServerContent(
             ) {
                 Checkbox(
                     checked = cleanSession,
-                    onCheckedChange = onCleanSessionChange
+                    onCheckedChange = onCleanSessionChange,
+                    enabled = editingEnabled,
                 )
                 Text(
-                    text =stringResource(R.string.clean_session),
+                    text = stringResource(R.string.clean_session),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -286,6 +197,7 @@ fun AddServerContent(
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
+                enabled = editingEnabled,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
@@ -299,7 +211,8 @@ fun AddServerContent(
             ) {
                 Checkbox(
                     checked = willRetain,
-                    onCheckedChange = onWillRetainChange
+                    onCheckedChange = onWillRetainChange,
+                    enabled = editingEnabled,
                 )
                 Text(
                     text = stringResource(R.string.last_will_retain),
@@ -320,6 +233,7 @@ fun AddServerContent(
                 modifier = Modifier
                     .weight(0.5f)
                     .height(96.dp),
+                enabled = editingEnabled,
                 singleLine = true
             )
             // Last will message input
@@ -329,7 +243,9 @@ fun AddServerContent(
                 label = { Text(stringResource(R.string.last_will_message)) },
                 modifier = Modifier
                     .weight(0.5f)
-                    .height(96.dp)
+                    .height(96.dp),
+                enabled = editingEnabled,
+                singleLine = true
             )
         }
     }
@@ -337,12 +253,12 @@ fun AddServerContent(
 
 @Preview(showBackground = true)
 @Composable
-fun AddServerContentPreview() {
+fun ServerConnectionDetailsPreview() {
     AndroidMQTTClientTheme {
         Surface(
             modifier = Modifier.padding(16.dp),
         ) {
-            AddServerContent(
+            ServerConnectionDetails(
                 serverName = "Test Server",
                 serverAddress = "localhost",
                 serverPort = 1883,
@@ -355,6 +271,7 @@ fun AddServerContentPreview() {
                 willRetain = false,
                 willTopic = "",
                 willMessage = "",
+                editingEnabled = true,
                 onServerNameChange = {},
                 onServerAddressChange = {},
                 onServerPortChange = {},

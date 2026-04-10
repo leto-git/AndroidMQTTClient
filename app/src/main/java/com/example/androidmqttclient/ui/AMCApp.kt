@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,25 +36,60 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.AMCDatabase
 import com.example.androidmqttclient.data.repository.AMCRepository
 import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
+import com.example.androidmqttclient.ui.screens.AddServerConnectionScreen
+import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen
 import com.example.androidmqttclient.viewmodel.AMCViewModel
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
 
-enum class MQTTScreen(@StringRes val title: Int, val icon: ImageVector) {
-    // TODO: Replace placeholder icons with custom ones
-    Connect(R.string.connect, Icons.Default.Call),
-    Subscribe(R.string.subscribe, Icons.Default.Add),
-    Publish(R.string.publish, Icons.AutoMirrored.Default.Send),
-    Stats(R.string.stats, Icons.AutoMirrored.Filled.List),
-    Info(R.string.info, Icons.Default.Info)
+/**
+ * Sealed class representing different MQTT screens.
+ *
+ * @property route The route string for navigation.
+ * @property title The string resource for the screen title.
+ * @property icon The image vector for the screen icon.
+ */
+sealed class MQTTScreen (
+    val route: String,
+    @StringRes val title: Int,
+    val icon: ImageVector
+) {
+    object Connect : MQTTScreen("connect", R.string.connect, Icons.Default.Call)
+    object AddServer: MQTTScreen("add_server", R.string.add_server_screen, Icons.Default.Add)
+    object EditServer: MQTTScreen("edit_server/{serverId}", R.string.edit_server_screen, Icons.Default.Edit) {
+        fun createRoute(serverId: Int) = "edit_server/$serverId"
+    }
+    object Subscribe : MQTTScreen("subscribe", R.string.subscribe, Icons.Default.Add)
+    object Publish : MQTTScreen("publish", R.string.publish, Icons.AutoMirrored.Default.Send)
+    object Stats : MQTTScreen("stats", R.string.stats, Icons.AutoMirrored.Filled.List)
+    object Info : MQTTScreen("info", R.string.info, Icons.Default.Info)
+
+    companion object {
+        // Helper to find the screen object based on the current route
+        fun fromRoute(route: String?): MQTTScreen {
+            val baseRoute = route?.substringBefore("/")
+            return when (baseRoute) {
+                Connect.route -> Connect
+                AddServer.route -> AddServer
+                "edit_server" -> EditServer
+                Subscribe.route -> Subscribe
+                Publish.route -> Publish
+                Stats.route -> Stats
+                Info.route -> Info
+                else -> Connect
+            }
+        }
+    }
 }
 
 /**
@@ -78,13 +114,16 @@ fun AMCApp(
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val currentScreen = MQTTScreen.valueOf(currentRoute ?: MQTTScreen.Connect.name)
+
+    val currentScreen = MQTTScreen.fromRoute(currentRoute)
+    val canNavigateBack = navController.previousBackStackEntry != null
 
     Scaffold(
         topBar = {
             MQTTAppBar(
                 currentScreen = currentScreen,
-                canNavigateBack = false
+                canNavigateBack = canNavigateBack,
+                navigateUp = { navController.navigateUp() }
             )
         },
         bottomBar = {
@@ -99,24 +138,74 @@ fun AMCApp(
         // NavHost composable for app navigation
         NavHost(
             navController = navController,
-            startDestination = MQTTScreen.Connect.name,
+            startDestination = MQTTScreen.Connect.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             // Connect screen
-            composable(route = MQTTScreen.Connect.name) {
+            composable(route = MQTTScreen.Connect.route) {
                 ConnectScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
-                    onAddServer = { viewModel.addServer(it) },
-                    onConnect = { viewModel.connect(it) },
-                    onErrorDismissed = { viewModel.clearError() }
+                    onAddServer = { navController.navigate(MQTTScreen.AddServer.route) },
+                    onConnect = { connection ->
+                        viewModel.connect(connection)
+                    },
+                    onViewConnectionDetails = { connection ->
+                        navController.navigate(MQTTScreen.EditServer.createRoute(connection.id))
+                    },
+                    onDisconnect = { viewModel.disconnect() },
+                    onDeleteConnection = { connection ->
+                        viewModel.removeServer(connection)
+                    },
+                    onErrorDismissed = { viewModel.clearError()}
                 )
             }
 
+            // Add server screen
+            composable( route = MQTTScreen.AddServer.route ) {
+                AddServerConnectionScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(R.dimen.padding_small)),
+                    onAddConnection = {
+                        viewModel.addServer(it)
+                        navController.popBackStack()
+                    },
+                    onCancel = { navController.navigateUp() }
+                )
+            }
+
+            // Edit server screen
+            composable(
+                route = MQTTScreen.EditServer.route,
+                arguments = listOf(navArgument("serverId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val serverId = backStackEntry.arguments?.getInt("serverId")
+                val connection = uiState.serverConnections.find { it.id == serverId }
+
+                // Only show if connection is found to avoid crashes
+                connection?.let {
+                    EditServerConnectionScreen(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(dimensionResource(R.dimen.padding_small)),
+                        connection = it,
+                        onSave = { connection ->
+                            viewModel.updateServer(connection)
+                        },
+                        onDelete = { connection ->
+                            viewModel.removeServer(connection)
+                            navController.popBackStack()
+                        },
+                        onBack = { navController.navigateUp() }
+                    )
+                }
+            }
+
             // Subscribe screen
-            composable(route = MQTTScreen.Subscribe.name) {
+            composable(route = MQTTScreen.Subscribe.route) {
                 SubscribeScreen(
                     modifier = Modifier
                         .fillMaxSize()
@@ -127,7 +216,7 @@ fun AMCApp(
             }
 
             // Publish screen
-            composable(route = MQTTScreen.Publish.name) {
+            composable(route = MQTTScreen.Publish.route) {
                 PublishScreen (
                     modifier = Modifier
                         .fillMaxSize()
@@ -141,8 +230,8 @@ fun AMCApp(
             }
 
             // TODO: Replace placeholders with actual screens
-            composable(route = MQTTScreen.Stats.name) { PlaceholderScreen("Stats") }
-            composable(route = MQTTScreen.Info.name) { PlaceholderScreen("Info") }
+            composable(route = MQTTScreen.Stats.route) { PlaceholderScreen("Stats") }
+            composable(route = MQTTScreen.Info.route) { PlaceholderScreen("Info") }
         }
     }
 }
@@ -186,14 +275,26 @@ fun MQTTBottomBar(
     navController: NavHostController
 ) {
     NavigationBar {
-        MQTTScreen.entries.forEach { screen ->
+        val bottomTabScreens = listOf(
+            MQTTScreen.Connect,
+            MQTTScreen.Subscribe,
+            MQTTScreen.Publish,
+            MQTTScreen.Stats,
+            MQTTScreen.Info
+        )
+        bottomTabScreens.forEach { screen ->
+            val isSelected = currentRoute?.substringBefore("/") ==
+                    screen.route.substringBefore("/")
+
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = null) },
-                selected = currentRoute == screen.name,
+                selected = isSelected,
                 onClick = {
-                    if (currentRoute != screen.name) {
-                        navController.navigate(screen.name) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    if (currentRoute != screen.route) {
+                        navController.navigate(screen.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }

@@ -101,18 +101,29 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
+     * Update an existing server.
+     *
+     * @param server The server to update.
+     */
+    fun updateServer(server: AMCServerConnection) {
+        viewModelScope.launch {
+            amcRepository.updateServer(server)
+        }
+    }
+
+    /**
      * Connect to a server.
      *
-     * @param server The server to connect to.
+     * @param connection The server to connect to.
      */
-    fun connect(server: AMCServerConnection) {
+    fun connect(connection: AMCServerConnection) {
         // Update UI state to indicate that connection is in progress
         _uiState.update { it.copy(isConnecting = true) }
 
         // Connect to server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
-            Log.d(tag, "Connecting to ${server.connectionName}")
-            val result = amcRepository.connect(server)
+            Log.d(tag, "Connecting to ${connection.connectionName}")
+            val result = amcRepository.connect(connection)
 
             result.onSuccess {
                 // Update UI state to indicate that connection was successful
@@ -120,7 +131,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     currentState.copy(
                         isConnecting = false,
                         isConnected = true,
-                        connectedServer = server,
+                        connectedServer = connection,
                     )
                 }
             }.onFailure { error ->
@@ -128,6 +139,31 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 _uiState.update { it.copy(
                     isConnecting = false,
                     errorMessage = error.localizedMessage ?: "Connection failed") }
+            }
+        }
+    }
+
+    /**
+     * Disconnect from the current server.
+     */
+    fun disconnect() {
+        viewModelScope.launch {
+            Log.d(tag, "Disconnecting from ${uiState.value.connectedServer?.connectionName}")
+            val result = amcRepository.disconnect()
+            result.onSuccess {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isConnected = false,
+                        connectedServer = null
+                    )
+                }
+            }.onFailure {
+                Log.e(tag, "Error disconnecting from server", it)
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        errorMessage = it.localizedMessage ?: "Error disconnecting from server"
+                    )
+                }
             }
         }
     }
