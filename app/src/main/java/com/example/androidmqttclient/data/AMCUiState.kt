@@ -20,6 +20,10 @@ data class AMCUiState(
     val isConnecting: Boolean = false,
     val isSubscribing: Boolean = false,
     val isPublishing: Boolean = false,
+
+    // Error and info messages displayed to the user as snackBar
     val errorMessage: String? = null,
+    val infoMessage: String? = null,
+
     val logMessages: List<AMCLogEntry> = listOf()
 )

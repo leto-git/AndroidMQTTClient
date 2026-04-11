@@ -92,17 +92,19 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
         viewModelScope.launch {
             // Insert server into database
             amcRepository.insertServerConnection(connection)
+            showInfoMessage("Successfully added ${connection.connectionName}")
         }
     }
 
     /**
      * Remove a server from the list of available servers.
      *
-     * @param server The server to remove.
+     * @param connection The server to remove.
      */
-    fun removeServer(server: AMCServerConnection) {
+    fun removeServer(connection: AMCServerConnection) {
         viewModelScope.launch {
-            amcRepository.deleteServer(server)
+            amcRepository.deleteServer(connection)
+            showInfoMessage("Successfully removed ${connection.connectionName}")
         }
     }
 
@@ -114,6 +116,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     fun updateServer(server: AMCServerConnection) {
         viewModelScope.launch {
             amcRepository.updateServer(server)
+            showInfoMessage("Successfully updated ${server.connectionName}")
         }
     }
 
@@ -129,10 +132,13 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
         // Connect to server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
             Log.d(tag, "Connecting to ${connection.connectionName}")
-            val result = amcRepository.connect(connection)
 
+            val result = amcRepository.connect(connection)
             result.onSuccess {
-                // Update UI state to indicate that connection was successful
+                Log.d(tag, "Successfully connected to ${connection.connectionName}")
+                showInfoMessage("Connected to ${connection.connectionName}")
+
+                // Update UI state
                 _uiState.update { currentState ->
                     currentState.copy(
                         isConnecting = false,
@@ -146,10 +152,9 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     )
                 }
             }.onFailure { error ->
-                // Update UI state to indicate that connection failed
-                _uiState.update { it.copy(
-                    isConnecting = false,
-                    errorMessage = error.localizedMessage ?: "Connection failed") }
+                _uiState.update { it.copy(isConnecting = false) }
+                Log.e(tag, "Error connecting to ${connection.connectionName}", error)
+                showErrorMessage("Could not connect to ${connection.connectionName}")
             }
         }
     }
@@ -158,10 +163,17 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      * Disconnect from the current server.
      */
     fun disconnect() {
+        // Disconnect from server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
-            Log.d(tag, "Disconnecting from ${uiState.value.connectedServer?.connectionName}")
+            val connectionName = uiState.value.connectedServer?.connectionName
+            Log.d(tag, "Disconnecting from $connectionName")
+
             val result = amcRepository.disconnect()
             result.onSuccess {
+                Log.d(tag, "Successfully disconnected from $connectionName")
+                showInfoMessage("Disconnected from $connectionName")
+
+                // Update UI state
                 _uiState.update { currentState ->
                     currentState.copy(
                         isConnected = false,
@@ -169,17 +181,13 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                         logMessages = currentState.logMessages + AMCLogEntry(
                             timestamp = System.currentTimeMillis(),
                             type  = LogEntryType.DISCONNECT,
-                            message = "Disconnected from server: ${currentState.connectedServer?.connectionName}"
+                            message = "Disconnected from server: $connectionName"
                         )
                     )
                 }
-            }.onFailure {
-                Log.e(tag, "Error disconnecting from server", it)
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        errorMessage = it.localizedMessage ?: "Error disconnecting from server"
-                    )
-                }
+            }.onFailure { error ->
+                Log.e(tag, "Error disconnecting from server", error)
+                showErrorMessage("Could not disconnect from $connectionName")
             }
         }
     }
@@ -200,10 +208,11 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             Log.d(tag, "Subscribing to ${subscription.topic}")
 
             val result = amcRepository.subscribe(subscription)
-
             result.onSuccess {
                 Log.d(tag, "Successfully subscribed to ${subscription.topic}")
-                // Update UI state to indicate that subscription was successful
+                showInfoMessage("Subscribed to ${subscription.topic}")
+
+                // Update UI state
                 _uiState.update { currentState ->
                     currentState.copy(
                         isSubscribing = false,
@@ -216,14 +225,10 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     )
                 }
             }.onFailure { error ->
+                _uiState.update { it.copy(isSubscribing = false) }
                 Log.e(tag, "Error subscribing to ${subscription.topic}", error)
-                // Update UI state to indicate that subscription failed
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        isSubscribing = false,
-                        errorMessage = error.localizedMessage ?: "Error subscribing"
-                    )
-                }
+                showErrorMessage("Could not subscribe to ${subscription.topic}")
+
             }
         }
     }
@@ -249,6 +254,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
         // Publish message inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
             Log.d(tag, "Publishing to ${message.topic}")
+
             val result = amcRepository.publish(
                 message.topic,
                 message.payload,
@@ -257,6 +263,9 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             )
             result.onSuccess {
                 Log.d(tag, "Successfully published to ${message.topic}")
+                showInfoMessage("Published to ${message.topic}")
+
+                // Update UI state
                 _uiState.update { currentState ->
                     currentState.copy(
                         isPublishing = false,
@@ -269,19 +278,36 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     )
                 }
             }.onFailure { error ->
-                _uiState.update {
-                    it.copy(isPublishing = false)
-                    it.copy(errorMessage = error.localizedMessage ?: "Error publishing")
-                }
+                _uiState.update { it.copy(isPublishing = false) }
                 Log.e(tag, "Error publishing to ${message.topic}", error)
+                showErrorMessage("Could not publish to ${message.topic}")
             }
         }
     }
 
     /**
-     * Clear the current error message.
+     * Updates the error message in the UI state.
      */
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
+    fun showErrorMessage(message: String?) {
+        _uiState.update { it.copy(errorMessage = message) }
+    }
+
+    /**
+     * Updates the info message in the UI state.
+     */
+    fun showInfoMessage(message: String?) {
+        _uiState.update { it.copy(infoMessage = message) }
+    }
+
+    /**
+     * Clear the current error or info message.
+     */
+    fun clearStatusMessage() {
+        _uiState.update {
+            it.copy(
+                errorMessage = null,
+                infoMessage = null
+            )
+        }
     }
 }
