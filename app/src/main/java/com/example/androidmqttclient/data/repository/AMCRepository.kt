@@ -40,6 +40,7 @@ class AMCRepository(
     )
     // Expose shared flow as read-only property
     val incomingMessages = _incomingMessages.asSharedFlow()
+
     // Coroutine scope for repository operations
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -78,7 +79,11 @@ class AMCRepository(
     }
 
     /**
+     * Get a server connection by its ID.
      *
+     * @param id The ID of the server connection to retrieve.
+     *
+     * @return A [Flow] object containing the server connection.
      */
     fun getServerById(id: Int): Flow<AMCServerConnection> {
         return serverConnectionDao.getServerConnectionById(id)

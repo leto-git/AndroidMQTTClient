@@ -3,10 +3,12 @@ package com.example.androidmqttclient.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.androidmqttclient.data.AMCLogEntry
 import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.AMCMessage
 import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.AMCSubscription
+import com.example.androidmqttclient.data.LogEntryType
 import com.example.androidmqttclient.data.repository.AMCRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,25 +41,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
-     * Observe incoming messages from the MQTT client.
-     *
-     * This function collects incoming messages from the shared flow in the repository
-     * and updates the UI state accordingly.
-     */
-    private fun observeIncomingMessages() {
-        viewModelScope.launch {
-            amcRepository.incomingMessages.collect { newMessage ->
-                // Update the UI State
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        receivedMessages = currentState.receivedMessages + newMessage
-                    )
-                }
-            }
-        }
-    }
-
-    /**
      * Observe server connections from the database.
      *
      * This function collects server connections from the database and updates the UI state
@@ -75,6 +58,30 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
+     * Observe incoming messages from the MQTT client.
+     *
+     * This function collects incoming messages from the shared flow in the repository
+     * and updates the UI state accordingly.
+     */
+    private fun observeIncomingMessages() {
+        viewModelScope.launch {
+            amcRepository.incomingMessages.collect { newMessage ->
+                // Update the UI State
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        receivedMessages = currentState.receivedMessages + newMessage,
+                        logMessages = currentState.logMessages + AMCLogEntry(
+                            timestamp = newMessage.timestamp,
+                            type = LogEntryType.PUBLISH_RECEIVED,
+                            message = "Received message with topic: ${newMessage.topic}",
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    /**
      * Add a new server to the list of available servers.
      *
      * @param connection The server to add.
@@ -83,8 +90,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
         // TODO: Check for validity of server data
         // TODO: Check if server already exists
         viewModelScope.launch {
-            // Just push to the DB. The 'collect' block above
-            // will notice the change and update the UI for you!
+            // Insert server into database
             amcRepository.insertServerConnection(connection)
         }
     }
@@ -132,6 +138,11 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                         isConnecting = false,
                         isConnected = true,
                         connectedServer = connection,
+                        logMessages = currentState.logMessages + AMCLogEntry(
+                            timestamp = System.currentTimeMillis(),
+                            type = LogEntryType.CONNECT,
+                            message = "Connected to server: ${connection.connectionName}"
+                        )
                     )
                 }
             }.onFailure { error ->
@@ -154,7 +165,12 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 _uiState.update { currentState ->
                     currentState.copy(
                         isConnected = false,
-                        connectedServer = null
+                        connectedServer = null,
+                        logMessages = currentState.logMessages + AMCLogEntry(
+                            timestamp = System.currentTimeMillis(),
+                            type  = LogEntryType.DISCONNECT,
+                            message = "Disconnected from server: ${currentState.connectedServer?.connectionName}"
+                        )
                     )
                 }
             }.onFailure {
@@ -191,7 +207,12 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 _uiState.update { currentState ->
                     currentState.copy(
                         isSubscribing = false,
-                        subscriptions = currentState.subscriptions + subscription
+                        subscriptions = currentState.subscriptions + subscription,
+                        logMessages = currentState.logMessages + AMCLogEntry(
+                            timestamp = System.currentTimeMillis(),
+                            type = LogEntryType.SUBSCRIBE,
+                            message = "Subscribed to topic: ${subscription.topic}"
+                        )
                     )
                 }
             }.onFailure { error ->
@@ -235,8 +256,18 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 message.retain
             )
             result.onSuccess {
-                _uiState.update { it.copy(isPublishing = false) }
                 Log.d(tag, "Successfully published to ${message.topic}")
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isPublishing = false,
+                        publishedMessages = currentState.publishedMessages + message,
+                        logMessages = currentState.logMessages + AMCLogEntry(
+                            timestamp = System.currentTimeMillis(),
+                            type = LogEntryType.PUBLISH_SENT,
+                            message = "Published message with topic: ${message.topic}"
+                        )
+                    )
+                }
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(isPublishing = false)
@@ -248,7 +279,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
-     * Clear the error message.
+     * Clear the current error message.
      */
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
