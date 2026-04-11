@@ -154,7 +154,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             }.onFailure { error ->
                 _uiState.update { it.copy(isConnecting = false) }
                 Log.e(tag, "Error connecting to ${connection.connectionName}", error)
-                showErrorMessage("Could not connect to ${connection.connectionName}")
+                showErrorMessage("Could not connect to ${connection.connectionName}: ${error.message}")
             }
         }
     }
@@ -187,7 +187,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 }
             }.onFailure { error ->
                 Log.e(tag, "Error disconnecting from server", error)
-                showErrorMessage("Could not disconnect from $connectionName")
+                showErrorMessage("Could not disconnect from $connectionName: ${error.message}")
             }
         }
     }
@@ -227,7 +227,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             }.onFailure { error ->
                 _uiState.update { it.copy(isSubscribing = false) }
                 Log.e(tag, "Error subscribing to ${subscription.topic}", error)
-                showErrorMessage("Could not subscribe to ${subscription.topic}")
+                showErrorMessage("Could not subscribe to ${subscription.topic}: ${error.message}")
 
             }
         }
@@ -280,7 +280,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             }.onFailure { error ->
                 _uiState.update { it.copy(isPublishing = false) }
                 Log.e(tag, "Error publishing to ${message.topic}", error)
-                showErrorMessage("Could not publish to ${message.topic}")
+                showErrorMessage("Could not publish to ${message.topic}: ${error.message}")
             }
         }
     }
