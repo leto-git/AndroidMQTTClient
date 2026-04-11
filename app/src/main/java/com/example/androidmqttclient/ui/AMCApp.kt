@@ -260,7 +260,8 @@ fun AMCApp(
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
-                    onAddSubscription = { viewModel.addSubscription(it) }
+                    onAddSubscription = { viewModel.addSubscription(it) },
+                    onUnsubscribe = { viewModel.unsubscribe(it) }
                 )
             }
 

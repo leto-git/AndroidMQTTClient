@@ -126,7 +126,6 @@ fun ConnectScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     // TODO: Handle clicks when already connected to a server
-                    // TODO: Snackbar feedback after successful connection
                     items(uiState.serverConnections) { connection ->
                         val isCurrentConnection = uiState.connectedServer?.id == connection.id
 

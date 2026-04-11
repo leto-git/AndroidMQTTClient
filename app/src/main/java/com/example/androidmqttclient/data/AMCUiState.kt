@@ -19,6 +19,7 @@ data class AMCUiState(
     // Status related properties
     val isConnecting: Boolean = false,
     val isSubscribing: Boolean = false,
+    val isUnsubscribing: Boolean = false,
     val isPublishing: Boolean = false,
 
     // Error and info messages displayed to the user as snackBar

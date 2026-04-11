@@ -193,7 +193,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
-     * Add a new subscription to the list of subscriptions.
+     * Subscribe to a new subscription.
      *
      * @param subscription The subscription to add.
      */
@@ -234,12 +234,41 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
-     * Remove a subscription from the list of subscriptions.
+     * Unsubscribe from a subscription.
      *
      * @param subscription The subscription to remove.
      */
-    fun removeSubscription(subscription: AMCSubscription) {
-        TODO("Not yet implemented")
+    fun unsubscribe(subscription: AMCSubscription) {
+        // Update UI state to indicate that unsubscription is in progress
+        _uiState.update { it.copy(isUnsubscribing = true) }
+
+        // Unsubscribe from topic inside coroutine to prevent blocking the Main thread
+        viewModelScope.launch {
+            Log.d(tag, "Unsubscribing from ${subscription.topic}")
+
+            val result = amcRepository.unsubscribe(subscription)
+            result.onSuccess {
+                Log.d(tag, "Successfully unsubscribed from ${subscription.topic}")
+                showInfoMessage("Unsubscribed from ${subscription.topic}")
+
+                // Update UI state
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isUnsubscribing = false,
+                        subscriptions = currentState.subscriptions - subscription,
+                        logMessages = currentState.logMessages + AMCLogEntry(
+                            timestamp = System.currentTimeMillis(),
+                            type = LogEntryType.UNSUBSCRIBE,
+                            message = "Unsubscribed from topic: ${subscription.topic}"
+                        )
+                    )
+                }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isUnsubscribing = false) }
+                Log.e(tag, "Error unsubscribing from ${subscription.topic}", error)
+                showErrorMessage("Could not unsubscribe from ${subscription.topic}: ${error.message}")
+            }
+        }
     }
 
     /**

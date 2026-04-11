@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -30,13 +31,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
- * [NewSubscriptionDialog] is the composable function for creating a new subscription.
+ * Composable function for creating a new subscription.
+ *
+ * @param onDismiss The callback to invoke when the dialog is dismissed.
+ * @param onConfirm The callback to invoke when the user confirms the subscription.
  */
 @Composable
 fun NewSubscriptionDialog(
@@ -63,7 +68,6 @@ fun NewSubscriptionDialog(
             )
         },
 
-        // TODO: Add confirmation for user with snackBar (see PublishScreen)
         // Confirm (Subscribe) button
         confirmButton = {
             TextButton(onClick = { onConfirm(qos, topic, subscriptionColor) }) {
@@ -80,6 +84,16 @@ fun NewSubscriptionDialog(
     )
 }
 
+/**
+ * Composable function for displaying the content of the new subscription dialog.
+ *
+ * @param qos The current QoS level.
+ * @param topic The current topic.
+ * @param subscriptionColor The current subscription color.
+ * @param onQoSChange The callback to invoke when the QoS level changes.
+ * @param onTopicChange The callback to invoke when the topic changes
+ * @param onColorChange The callback to invoke when the subscription color changes.
+ */
 @Composable
 fun NewSubscriptionContent(
     qos: Int,
@@ -101,15 +115,34 @@ fun NewSubscriptionContent(
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // QoS input
-        Text("Quality of Service (QoS)", style = MaterialTheme.typography.bodyMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = "Quality of Service (QoS)",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
             listOf(0, 1, 2).forEach { qosLevel ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .selectable(
+                            selected = (qos == qosLevel),
+                            onClick = { onQoSChange(qosLevel) },
+                            role = Role.RadioButton
+                        )
+                        .padding(4.dp)
+                ) {
                     RadioButton(
                         selected = qos == qosLevel,
-                        onClick = { onQoSChange(qosLevel) }
+                        onClick = null
                     )
-                    Text("QoS $qosLevel")
+                    Text(
+                        text ="QoS $qosLevel",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
             }
         }
@@ -131,7 +164,10 @@ fun NewSubscriptionContent(
             text = stringResource(R.string.color_for_subscription_messages),
             style = MaterialTheme.typography.bodyMedium
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             subscriptionColors.forEach { colorValue ->
                 val color = Color(colorValue)
                 Box(
