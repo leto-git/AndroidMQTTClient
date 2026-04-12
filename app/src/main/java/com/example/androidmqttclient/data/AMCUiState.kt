@@ -10,7 +10,7 @@ data class AMCUiState(
     val serverConnections: List<AMCServerConnection> = listOf(),
 
     // Subscription related properties
-    val subscriptions: List<AMCSubscription> = listOf(),
+    val activeSubscriptions: List<AMCSubscription> = listOf(),
     val receivedMessages: List<AMCMessage> = listOf(),
 
     // Publish related properties
@@ -19,7 +19,12 @@ data class AMCUiState(
     // Status related properties
     val isConnecting: Boolean = false,
     val isSubscribing: Boolean = false,
+    val isUnsubscribing: Boolean = false,
     val isPublishing: Boolean = false,
+
+    // Error and info messages displayed to the user as snackBar
     val errorMessage: String? = null,
+    val infoMessage: String? = null,
+
     val logMessages: List<AMCLogEntry> = listOf()
 )

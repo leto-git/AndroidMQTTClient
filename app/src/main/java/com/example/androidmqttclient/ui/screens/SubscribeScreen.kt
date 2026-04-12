@@ -15,8 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,8 +37,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.AMCMessage
-import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.AMCSubscription
+import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.formatTimestamp
 import com.example.androidmqttclient.ui.components.NewSubscriptionDialog
 import com.example.androidmqttclient.ui.components.SubscriptionsOverviewDialog
@@ -46,12 +50,14 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  * @param modifier The modifier to apply to the composable.
  * @param uiState The current UI state.
  * @param onAddSubscription The callback to invoke when a new subscription is added.
+ * @param onUnsubscribe The callback to invoke when unsubscribing from an existing subscription.
  */
 @Composable
 fun SubscribeScreen(
     modifier: Modifier = Modifier,
     uiState: AMCUiState,
-    onAddSubscription: (AMCSubscription) -> Unit = {}
+    onAddSubscription: (AMCSubscription) -> Unit = {},
+    onUnsubscribe: (AMCSubscription) -> Unit = {}
 ) {
     // State to track if the new subscription dialog should be shown
     var showNewSubscriptionDialog by remember { mutableStateOf(false) }
@@ -63,23 +69,21 @@ fun SubscribeScreen(
             .fillMaxSize()
             .padding(dimensionResource(R.dimen.padding_small))
     ) {
-        // Row with two buttons
-        Row(
+        // New Subscription and View Subscriptions buttons
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(
-                2.dp
-            )
         ) {
             // New Subscription button
-            // TODO: Snackbar feedback for successful subscription
-            // TODO: Snackbar for showing errors
             Button(
                 onClick = { showNewSubscriptionDialog = true },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                )
                 Text(
-                    text = stringResource(R.string.new_subscription)
-                        .replace(" ", "\n"),
+                    text = stringResource(R.string.new_subscription),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -87,11 +91,14 @@ fun SubscribeScreen(
             // View Subscriptions button
             Button(
                 onClick = { showSubscriptionsOverviewDialog = true },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.List,
+                    contentDescription = null,
+                )
                 Text(
-                    text = stringResource(R.string.view_subscriptions)
-                        .replace(" ", "\n"),
+                    text = stringResource(R.string.view_subscriptions),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -116,7 +123,7 @@ fun SubscribeScreen(
         ) {
             items(uiState.receivedMessages.asReversed()) { message ->
                 // Determine subscription color for message based on topic
-                val subscriptionColorLong = uiState.subscriptions
+                val subscriptionColorLong = uiState.activeSubscriptions
                     .find { it.topic == message.topic }?.color ?: 0xFF808080
                 val subscriptionColor = Color(subscriptionColorLong)
                 // Show message item
@@ -130,8 +137,15 @@ fun SubscribeScreen(
         NewSubscriptionDialog(
             onDismiss = { showNewSubscriptionDialog = false },
             onConfirm = { qos, topic, color ->
+                val connectionId = uiState.connectedServer?.id ?: return@NewSubscriptionDialog
+
                 // Create a new subscription
-                val newSubscription = AMCSubscription(qos, topic, color)
+                val newSubscription = AMCSubscription(
+                    serverConnectionId = connectionId,
+                    qos = qos,
+                    topic = topic,
+                    color = color
+                )
 
                 // Callback with new subscription
                 onAddSubscription(newSubscription)
@@ -144,8 +158,11 @@ fun SubscribeScreen(
     // Show the subscriptions dialog if the state is true
     if( showSubscriptionsOverviewDialog ) {
         SubscriptionsOverviewDialog(
-            subscriptions = uiState.subscriptions,
-            onDismiss = { showSubscriptionsOverviewDialog = false }
+            subscriptions = uiState.activeSubscriptions,
+            onDismiss = { showSubscriptionsOverviewDialog = false },
+            onUnsubscribe = { subscription ->
+                onUnsubscribe(subscription)
+            }
         )
     }
 }
@@ -154,6 +171,7 @@ fun SubscribeScreen(
  * Composable function for displaying a single message item.
  *
  * @param message The message to display.
+ * @param subscriptionColor The color of the subscription.
  */
 @Composable
 fun MessageItem(
@@ -161,9 +179,8 @@ fun MessageItem(
     subscriptionColor: Color
 ) {
     // Format timestamp into a readable string
-    val pattern = stringResource(R.string.date_format)
     val formattedDate = remember(message.timestamp) {
-        formatTimestamp(message.timestamp, pattern)
+        formatTimestamp(message.timestamp)
     }
 
     Row(
@@ -228,8 +245,13 @@ fun SubscribeScreenPreview() {
     AndroidMQTTClientTheme {
         SubscribeScreen(
             uiState = AMCUiState(
-                subscriptions = listOf(
-                    AMCSubscription(0, "test/topic", 0xFFFF0000)
+                activeSubscriptions = listOf(
+                    AMCSubscription(
+                        id = 0,
+                        serverConnectionId = 0,
+                        qos =0,
+                        topic = "test/topic",
+                        color = 0xFFFF0000)
                 ),
                 receivedMessages = listOf(
                     AMCMessage("test/topic", "Test message 1",

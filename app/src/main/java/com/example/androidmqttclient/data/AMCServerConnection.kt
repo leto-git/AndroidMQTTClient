@@ -13,7 +13,7 @@ enum class MQTTVersion {
 }
 
 /**
- * Data class for representing a MQTT server connection.
+ * Data class for representing a MQTT server connection stored in a Room database.
  */
 @Entity(
     tableName = "server_connections",

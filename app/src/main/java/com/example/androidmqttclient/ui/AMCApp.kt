@@ -20,11 +20,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -103,7 +109,10 @@ fun AMCApp(
     // Create Database instance
     val database = AMCDatabase.getDatabase(context = LocalContext.current)
     // Create MQTTRepository
-    val amcRepository = AMCRepository(database.serverConnectionDao())
+    val amcRepository = AMCRepository(
+        serverConnectionDao = database.serverConnectionDao(),
+        subscriptionDao = database.subscriptionDao()
+    )
     // Create ViewModel
     val viewModel: AMCViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
@@ -112,12 +121,33 @@ fun AMCApp(
             }
         }
     )
+    // UI state from ViewModel
+    val uiState by viewModel.uiState.collectAsState()
 
+    // Snackbar host state
+    val snackBarHostState = remember { SnackbarHostState() }
+
+    // Navigation
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
     val currentScreen = MQTTScreen.fromRoute(currentRoute)
     val canNavigateBack = navController.previousBackStackEntry != null
+
+    // Show snackbar if error or info message is set
+    LaunchedEffect(uiState.errorMessage, uiState.infoMessage) {
+        val message = uiState.errorMessage ?: uiState.infoMessage
+        val isError = uiState.errorMessage != null
+
+        message?.let {
+            snackBarHostState.showSnackbar(
+                message = it,
+                duration = if (isError) SnackbarDuration.Long else SnackbarDuration.Short,
+                withDismissAction = true
+            )
+            // Clear error message after showing it
+            viewModel.clearStatusMessage()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -132,10 +162,32 @@ fun AMCApp(
                 currentRoute = currentRoute,
                 navController = navController
             )
+        },
+        snackbarHost = {
+            // Snackbar composable for showing error and info messages
+            SnackbarHost(hostState = snackBarHostState) { data ->
+                val isError = data.visuals.message == uiState.errorMessage
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = if (isError) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
+                    contentColor = if (isError) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    },
+                    dismissActionContentColor = if (isError) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+            }
         }
     ) { innerPadding ->
-        val uiState by viewModel.uiState.collectAsState()
-
         // NavHost composable for app navigation
         NavHost(
             navController = navController,
@@ -149,7 +201,7 @@ fun AMCApp(
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
-                    onAddServer = { navController.navigate(MQTTScreen.AddServer.route) },
+                    onAddConnection = { navController.navigate(MQTTScreen.AddServer.route) },
                     onConnect = { connection ->
                         viewModel.connect(connection)
                     },
@@ -160,7 +212,6 @@ fun AMCApp(
                     onDeleteConnection = { connection ->
                         viewModel.removeServer(connection)
                     },
-                    onErrorDismissed = { viewModel.clearError()}
                 )
             }
 
@@ -212,7 +263,8 @@ fun AMCApp(
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
-                    onAddSubscription = { viewModel.addSubscription(it) }
+                    onAddSubscription = { viewModel.addSubscription(it) },
+                    onUnsubscribe = { viewModel.removeSubscription(it) }
                 )
             }
 
@@ -222,11 +274,9 @@ fun AMCApp(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
-                    uiState = uiState,
                     onPublish = { mqttMessage ->
                         viewModel.publish(mqttMessage)
                     },
-                    onErrorDismissed = { viewModel.clearError() }
                 )
             }
 

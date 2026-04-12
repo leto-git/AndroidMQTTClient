@@ -5,13 +5,18 @@ import com.example.androidmqttclient.data.AMCMessage
 import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.AMCServerConnectionDao
 import com.example.androidmqttclient.data.AMCSubscription
+import com.example.androidmqttclient.data.AMCSubscriptionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
@@ -27,10 +32,32 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
  * It is responsible for managing the MQTT client and the server connections.
  */
 class AMCRepository(
-    private val serverConnectionDao: AMCServerConnectionDao
+    private val serverConnectionDao: AMCServerConnectionDao,
+    private val subscriptionDao: AMCSubscriptionDao
 ) {
     // Paho MQTT client instance
     private var mqttClient: MqttClient? = null
+
+    // Coroutine scope for repository operations
+    private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    // Flow for server connections
+    val serverConnections: Flow<List<AMCServerConnection>> =
+        serverConnectionDao.getAllServerConnections()
+
+    // Track the current server connection
+    private val _connectedServerId = MutableStateFlow<Int?>(null)
+
+    // Flow for active subscriptions
+    // Any change to the subscription database will trigger a new query and update this variable
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val activeSubscriptions: Flow<List<AMCSubscription>> = _connectedServerId.flatMapLatest { id ->
+        if (id == null) {
+            flowOf(emptyList())
+        } else {
+            subscriptionDao.getSubscriptionsForServer(id)
+        }
+    }
 
     // Shared flow for incoming messages
     private val _incomingMessages = MutableSharedFlow<AMCMessage>(
@@ -40,13 +67,6 @@ class AMCRepository(
     )
     // Expose shared flow as read-only property
     val incomingMessages = _incomingMessages.asSharedFlow()
-
-    // Coroutine scope for repository operations
-    private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    // Flow for server connections
-    val serverConnections: Flow<List<AMCServerConnection>> =
-        serverConnectionDao.getAllServerConnections()
 
     // Tag for logging
     private val tag: String = "MQTTRepository"
@@ -79,25 +99,15 @@ class AMCRepository(
     }
 
     /**
-     * Get a server connection by its ID.
-     *
-     * @param id The ID of the server connection to retrieve.
-     *
-     * @return A [Flow] object containing the server connection.
-     */
-    fun getServerById(id: Int): Flow<AMCServerConnection> {
-        return serverConnectionDao.getServerConnectionById(id)
-    }
-
-    /**
      * Connect to a server.
      *
      * @param connection The connection object containing the server information.
      *
      * @return A [Result] object indicating the success or failure of the connection.
      */
-    suspend fun connect(connection: AMCServerConnection): Result<Unit> =
-        withContext(Dispatchers.IO) {
+    suspend fun connect(
+        connection: AMCServerConnection
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             // Build server address
             val rawAddress = connection.serverAddress
@@ -146,7 +156,7 @@ class AMCRepository(
             // Set callback listener for asynchronous events
             mqttClient?.setCallback(object: MqttCallbackExtended {
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                    Log.d(tag, "Connected to $serverURI")
+                    // Intentionally empty
                 }
 
                 override fun connectionLost(cause: Throwable?) {
@@ -171,16 +181,31 @@ class AMCRepository(
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                    // Intentionally empty
                 }
             })
 
             // Connect to server
             Log.d(tag, "Connecting to $address")
             mqttClient?.connect(options)
-            Log.d(tag, "Connected to $address")
 
+            _connectedServerId.value = connection.id
+
+            // Clear subscriptions from the database, if clean session is true
+            // If the client gracefully disconnected this operation is not necessary, but
+            // it is safer to delete all subscriptions here in case it did not.
+            if (connection.cleanSession) {
+                subscriptionDao.deleteAllSubscriptionsForServer(connection.id)
+            }
+
+            Log.d(tag, "Connected to $address")
             Result.success(Unit)
         } catch (e: Exception) {
+            // Reset state
+            _connectedServerId.value = null
+            mqttClient?.setCallback(null)
+            mqttClient = null
+
             Log.e(tag, "Error connecting to server ${connection.connectionName}", e)
             Result.failure(e)
         }
@@ -189,16 +214,48 @@ class AMCRepository(
     /**
      * Disconnect from the server.
      *
+     * This function will also delete all server subscriptions from the database, if
+     * the clean session flag is set to true.
+     *
+     * @param connection The connection object containing the server information.
+     *
      * @return A [Result] object indicating the success or failure of the disconnection.
      */
-    suspend fun disconnect(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun disconnect(
+        connection: AMCServerConnection
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val client = mqttClient
+        if (client == null) {
+            // Can't disconnect, return success since desired disconnect state is achieved.
+            return@withContext Result.success(Unit)
+        }
+
         try {
-            mqttClient?.disconnect()
+            if(client.isConnected) {
+                // Disconnect from the server
+                client.disconnect()
+
+                // Clear subscriptions from the database if clean session is true
+                if (connection.cleanSession) {
+                    subscriptionDao.deleteAllSubscriptionsForServer(connection.id)
+                }
+            }
+
+            // Reset connected ID, lear callback listener and set mqttClient to null
+            _connectedServerId.value = null
+            client.setCallback(null)
+            mqttClient = null
 
             Log.d(tag, "Disconnected")
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(tag, "Error disconnecting", e)
+
+            // In case of error also reset the client state
+            _connectedServerId.value = null
+            client.setCallback(null)
+            mqttClient = null
+
             Result.failure(e)
         }
     }
@@ -210,37 +267,60 @@ class AMCRepository(
      *
      * @return A [Result] object indicating the success or failure of the subscription.
      */
-    suspend fun subscribe(subscription: AMCSubscription): Result<Unit> =
-        withContext(Dispatchers.IO) {
-        try {
-            mqttClient?.subscribe(subscription.topic, subscription.qos)
+    suspend fun subscribe(
+        subscription: AMCSubscription
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        requireClient().fold(
+            onSuccess = { client ->
+                try {
+                    // Subscribe to the topic on the server
+                    client.subscribe(subscription.topic, subscription.qos)
 
-            Log.d(tag, "Subscribed to $subscription.topic")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(tag, "Error subscribing to $subscription.topic", e)
-            Result.failure(e)
-        }
+                    // Save the subscription to the database
+                    subscriptionDao.insertSubscription(subscription)
+
+                    Log.d(tag, "Subscribed to ${subscription.topic}")
+                    Result.success(Unit)
+                } catch (e: Exception) {
+                    Log.e(tag, "Error subscribing to ${subscription.topic}", e)
+                    Result.failure(e)
+                }
+            },
+            onFailure = { Result.failure(it) }
+        )
     }
 
     /**
      * Unsubscribe from a topic.
      *
-     * @param topic The topic to unsubscribe from.
+     * @param subscription The subscription object containing the topic.
      *
      * @return A [Result] object indicating the success or failure of the unsubscribe.
      */
-    suspend fun unsubscribe(topic: String): Result<Unit> =
-        withContext(Dispatchers.IO) {
-        try {
-            mqttClient?.unsubscribe(topic)
-            Log.d(tag, "Unsubscribed from $topic")
+    suspend fun unsubscribe(
+        subscription: AMCSubscription
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        requireClient().fold(
+            onSuccess = { client ->
+                try {
+                    // Unsubscribe from the topic on the server
+                    client.unsubscribe(subscription.topic)
 
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(tag, "Error unsubscribing from $topic", e)
-            Result.failure(e)
-        }
+                    // Delete the subscription from the database
+                    subscriptionDao.deleteByTopic(
+                        subscription.serverConnectionId,
+                        subscription.topic
+                    )
+
+                    Log.d(tag, "Unsubscribed from ${subscription.topic}")
+                    Result.success(Unit)
+                } catch (e: Exception) {
+                    Log.e(tag, "Error unsubscribing from ${subscription.topic}", e)
+                    Result.failure(e)
+                }
+            },
+            onFailure = { Result.failure(it) }
+        )
     }
 
     /**
@@ -259,19 +339,41 @@ class AMCRepository(
         qos: Int,
         retain: Boolean
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            Log.d(tag, "Trying to publish to $topic: $message")
-            val mqttMessage = MqttMessage(message.toByteArray()).apply {
-                this.qos = qos
-                this.isRetained = retain
-            }
-            mqttClient?.publish(topic, mqttMessage)
+        requireClient().fold(
+            onSuccess = { client ->
+                try {
+                    Log.d(tag, "Trying to publish to $topic: $message")
+                    val mqttMessage = MqttMessage(message.toByteArray()).apply {
+                        this.qos = qos
+                        this.isRetained = retain
+                    }
+                    client.publish(topic, mqttMessage)
 
-            Log.d(tag, "Successfully published.")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(tag, "Error publishing to $topic", e)
-            Result.failure(e)
+                    Log.d(tag, "Successfully published.")
+                    Result.success(Unit)
+                } catch (e: Exception) {
+                    Log.e(tag, "Error publishing to $topic", e)
+                    Result.failure(e)
+                }
+            },
+            onFailure = { Result.failure(it) }
+        )
+    }
+
+    /**
+     * Require an initialized MQTT client.
+     *
+     * @return A [Result] object containing the MQTT client if it is initialized and connected,
+     *         or a failure otherwise.
+     */
+    private fun requireClient(): Result<MqttClient> {
+        val client = mqttClient
+        return if (client != null && client.isConnected) {
+            Result.success(client)
+        } else {
+            Result.failure(
+                IllegalStateException("MQTT Client not initialized or disconnected")
+            )
         }
     }
 }

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,14 +33,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,195 +60,217 @@ import com.example.androidmqttclient.ui.theme.ConnectionRed
 
 /**
  * Composable function for showing the connect screen.
+ *
+ * @param modifier Modifier for styling.
+ * @param uiState The current UI state.
+ * @param onAddConnection Callback for adding a new connection.
+ * @param onConnect Callback for connecting.
+ * @param onViewConnectionDetails Callback for viewing connection details.
+ * @param onDisconnect Callback for disconnecting.
+ * @param onDeleteConnection Callback for deleting a connection.
  */
 @Composable
 fun ConnectScreen(
     modifier: Modifier = Modifier,
     uiState: AMCUiState,
-    onAddServer: () -> Unit = {},
+    onAddConnection: () -> Unit = {},
     onConnect: (AMCServerConnection) -> Unit = {},
     onViewConnectionDetails: (AMCServerConnection) -> Unit = {},
     onDisconnect: () -> Unit = {},
     onDeleteConnection: (AMCServerConnection) -> Unit = {},
-    onErrorDismissed: () -> Unit = {},
 ) {
     // State initialization
-    val snackBarHostState = remember { SnackbarHostState() }
     var connectionToDelete by remember { mutableStateOf<AMCServerConnection?>(null) }
+    var showDisconnectDialog by remember { mutableStateOf(false) }
 
-    // Show error message if it is not null
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
-            snackBarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Long,
-                withDismissAction = true
-            )
-            // Clear error message after showing it
-            onErrorDismissed()
-        }
-    }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackBarHostState) },
+    Box(
         modifier = modifier
-    ) { padding ->
-        Box(
-            modifier = modifier
+            .fillMaxSize()
+    ) {
+        // List of servers
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
         ) {
-            // List of servers
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                if (uiState.serverConnections.isEmpty()) {
-                    // Empty State Hint
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+            if (uiState.serverConnections.isEmpty()) {
+                // Empty State Hint
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.outline
-                            )
-                            Text(
-                                text = stringResource(R.string.no_servers_added),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.outline,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = stringResource(R.string.tap_plus_to_start),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = stringResource(R.string.no_servers_added),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.outline,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = stringResource(R.string.tap_plus_to_start),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            textAlign = TextAlign.Center
+                        )
                     }
-                } else {
-                    LazyColumn (
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        // TODO: Handle clicks when already connected to a server
-                        // TODO: Snackbar feedback after successful connection
-                        items(uiState.serverConnections) { connection ->
-                            val isCurrentConnection = uiState.connectedServer?.id == connection.id
+                }
+            } else {
+                LazyColumn (
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // TODO: Handle clicks when already connected to a server
+                    items(uiState.serverConnections) { connection ->
+                        val isCurrentConnection = uiState.connectedServer?.id == connection.id
 
-                            ConnectionItem(
-                                connection = connection,
-                                isConnected = isCurrentConnection,
-                                onClick = { onConnect(connection) },
-                                onEditClick = { onViewConnectionDetails(connection) },
-                                onDeleteClick = { connectionToDelete = connection }
-                            )
-                        }
+                        ConnectionItem(
+                            connection = connection,
+                            isConnected = isCurrentConnection,
+                            onClick = { onConnect(connection) },
+                            onEditClick = { onViewConnectionDetails(connection) },
+                            onDeleteClick = { connectionToDelete = connection }
+                        )
                     }
                 }
             }
+        }
 
-            // Floating action buttons
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(dimensionResource(R.dimen.padding_medium)),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Disconnect button if connected to a server
-                if( uiState.isConnected )
-                {
-                    ExtendedFloatingActionButton(
-                        onClick = { onDisconnect() },
-                        shape = CircleShape,
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = null
-                            )
-                        },
-                        text = {
-                            Text(stringResource(R.string.disconnect))
-                        }
-                    )
-                }
-                // Add server button
+        // Floating action buttons
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(dimensionResource(R.dimen.padding_medium)),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Disconnect button if connected to a server
+            if( uiState.isConnected )
+            {
                 ExtendedFloatingActionButton(
-                    onClick = { onAddServer() },
+                    onClick = { showDisconnectDialog = true },
                     shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
                     icon = {
                         Icon(
-                            imageVector = Icons.Default.Add,
+                            imageVector = Icons.Default.Close,
                             contentDescription = null
                         )
                     },
                     text = {
-                        Text(stringResource(R.string.add_server_screen))
+                        Text(stringResource(R.string.disconnect))
                     }
                 )
             }
+            // Add server button
+            ExtendedFloatingActionButton(
+                onClick = { onAddConnection() },
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null
+                    )
+                },
+                text = {
+                    Text(stringResource(R.string.add_server_screen))
+                }
+            )
+        }
 
-            // Show loading indicator if connection is in progress
-            if( uiState.isConnecting ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f)), // Dim the background
-                    contentAlignment = Alignment.Center
+        // Show loading indicator if connection is in progress
+        if( uiState.isConnecting ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)), // Dim the background
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(8.dp)
                 ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(8.dp)
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            CircularProgressIndicator()
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Connecting...")
-                        }
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Connecting...")
                     }
                 }
             }
+        }
 
-            // Delete connection confirmation dialog
-            if (connectionToDelete != null) {
-                AlertDialog(
-                    onDismissRequest = { connectionToDelete = null },
-                    title = { Text("Delete Connection") },
-                    text = { Text(stringResource(
-                        R.string.are_you_sure_you_want_to_delete,
-                        connectionToDelete!!.connectionName)
-                    ) },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            onDeleteConnection(connectionToDelete!!)
-                            connectionToDelete = null
-                        }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { connectionToDelete = null }) { Text("Cancel") }
+        // Delete connection confirmation dialog
+        if (connectionToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { connectionToDelete = null },
+                title = { Text("Delete Connection") },
+                text = { Text(stringResource(
+                    R.string.are_you_sure_you_want_to_delete,
+                    connectionToDelete!!.connectionName)
+                ) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onDeleteConnection(connectionToDelete!!)
+                        connectionToDelete = null
+                    }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { connectionToDelete = null }) { Text("Cancel") }
+                }
+            )
+        }
+
+        // Confirmation Dialog
+        if (showDisconnectDialog) {
+            AlertDialog(
+                onDismissRequest = { showDisconnectDialog = false },
+                title = { Text(stringResource(R.string.disconnect)) },
+                text = { Text(stringResource(R.string.are_you_sure_you_want_to_disconnect)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDisconnectDialog = false
+                            onDisconnect()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.disconnect))
                     }
-                )
-            }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDisconnectDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
         }
     }
 }
 
+/**
+ * Composable function for showing a single connection item.
+ *
+ * @param connection The connection to display.
+ * @param isConnected Whether the connection is currently connected.
+ * @param onClick Callback for when the item is clicked.
+ * @param onEditClick Callback for when the edit button is clicked.
+ * @param onDeleteClick Callback for when the delete button is clicked.
+ */
 @Composable
 fun ConnectionItem(
     connection: AMCServerConnection,
@@ -309,7 +327,6 @@ fun ConnectionItem(
 
                 // Edit and connection status
                 Row(
-                    modifier = Modifier.weight(0.5f),
                     horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
