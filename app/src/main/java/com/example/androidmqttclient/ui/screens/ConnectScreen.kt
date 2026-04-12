@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -80,6 +81,7 @@ fun ConnectScreen(
 ) {
     // State initialization
     var connectionToDelete by remember { mutableStateOf<AMCServerConnection?>(null) }
+    var showDisconnectDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -153,7 +155,7 @@ fun ConnectScreen(
             if( uiState.isConnected )
             {
                 ExtendedFloatingActionButton(
-                    onClick = { onDisconnect() },
+                    onClick = { showDisconnectDialog = true },
                     shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -232,6 +234,31 @@ fun ConnectScreen(
                 }
             )
         }
+
+        // Confirmation Dialog
+        if (showDisconnectDialog) {
+            AlertDialog(
+                onDismissRequest = { showDisconnectDialog = false },
+                title = { Text(stringResource(R.string.disconnect)) },
+                text = { Text(stringResource(R.string.are_you_sure_you_want_to_disconnect)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDisconnectDialog = false
+                            onDisconnect()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.disconnect))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDisconnectDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -300,7 +327,6 @@ fun ConnectionItem(
 
                 // Edit and connection status
                 Row(
-                    modifier = Modifier.weight(0.5f),
                     horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

@@ -4,6 +4,7 @@
     <string name="add_server_screen">Add server</string>
     <string name="app_name">AndroidMQTTClient</string>
     <string name="are_you_sure_you_want_to_delete">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
+    <string name="are_you_sure_you_want_to_disconnect">Are you sure you want to disconnect from the server?</string>
     <string name="are_you_sure_you_want_to_unsubscribe">Are you sure you want to unsubscribe from the topic?</string>
     <string name="back">Back</string>
     <string name="back_button">Back</string>
