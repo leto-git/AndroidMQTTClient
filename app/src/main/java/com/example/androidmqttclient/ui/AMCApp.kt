@@ -274,6 +274,7 @@ fun AMCApp(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
+                    uiState = uiState,
                     onPublish = { mqttMessage ->
                         viewModel.publish(mqttMessage)
                     },

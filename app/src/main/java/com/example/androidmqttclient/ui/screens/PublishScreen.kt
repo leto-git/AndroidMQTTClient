@@ -4,11 +4,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -27,6 +31,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.AMCMessage
+import com.example.androidmqttclient.data.AMCUiState
+import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
@@ -38,6 +44,7 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 @Composable
 fun PublishScreen(
     modifier: Modifier = Modifier,
+    uiState: AMCUiState,
     onPublish: (AMCMessage) -> Unit = {},
 ) {
     // State variables for input fields
@@ -112,7 +119,7 @@ fun PublishScreen(
             label = { Text(stringResource(R.string.message)) },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(128.dp)
+                .height(96.dp)
         )
 
         // Publish button
@@ -126,24 +133,70 @@ fun PublishScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.padding_medium)),
+                .padding(top = dimensionResource(R.dimen.padding_small)),
             enabled = topic.isNotBlank() && message.isNotBlank()
         ) {
             Text(stringResource(R.string.publish))
+        }
+
+        HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
+
+        // Messages headline
+        Text(
+            text = stringResource(R.string.published_messages),
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier
+                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small))
+                .fillMaxWidth()
+        )
+
+        // List of published messages
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items(uiState.publishedMessages.asReversed()) { message ->
+                // Show message item
+                MessageItem(message)
+            }
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun PublishScreenPreview(
-
-) {
+fun PublishScreenPreview() {
     AndroidMQTTClientTheme {
         Surface(
             modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
         ) {
-            PublishScreen()
+            PublishScreen(
+                uiState = AMCUiState(
+                    publishedMessages = listOf(
+                        AMCMessage(
+                            "test/topic",
+                            "Test message 1",
+                            0,
+                            false,
+                            timestamp = 123456789
+                        ),
+                        AMCMessage(
+                            "test/topic",
+                            "Test message 2",
+                            0,
+                            false,
+                            timestamp = 123456789
+                        ),
+                        AMCMessage(
+                            "test/topic",
+                            "Test message 3",
+                            0,
+                            false,
+                            timestamp = 123456789
+                        )
+                    )
+                )
+            )
         }
     }
 }

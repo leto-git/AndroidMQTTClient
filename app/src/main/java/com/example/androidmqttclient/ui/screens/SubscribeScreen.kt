@@ -1,18 +1,10 @@
 package com.example.androidmqttclient.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -39,7 +31,7 @@ import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.AMCMessage
 import com.example.androidmqttclient.data.AMCSubscription
 import com.example.androidmqttclient.data.AMCUiState
-import com.example.androidmqttclient.data.formatTimestamp
+import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.components.NewSubscriptionDialog
 import com.example.androidmqttclient.ui.components.SubscriptionsOverviewDialog
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
@@ -109,11 +101,11 @@ fun SubscribeScreen(
 
         // Messages headline
         Text(
-            text = stringResource(R.string.messages),
+            text = stringResource(R.string.received_messages),
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(
-                top = dimensionResource(R.dimen.padding_small),
-                bottom = dimensionResource(R.dimen.padding_small))
+            modifier = Modifier
+                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small))
+                .fillMaxWidth()
         )
 
         // List of received messages
@@ -164,75 +156,6 @@ fun SubscribeScreen(
                 onUnsubscribe(subscription)
             }
         )
-    }
-}
-
-/**
- * Composable function for displaying a single message item.
- *
- * @param message The message to display.
- * @param subscriptionColor The color of the subscription.
- */
-@Composable
-fun MessageItem(
-    message: AMCMessage,
-    subscriptionColor: Color
-) {
-    // Format timestamp into a readable string
-    val formattedDate = remember(message.timestamp) {
-        formatTimestamp(message.timestamp)
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        // Box showing the subscription color
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(dimensionResource(R.dimen.padding_small))
-                .background(subscriptionColor)
-        )
-
-        // Message content
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(dimensionResource(R.dimen.padding_small))
-        ) {
-            // Message timestamp, topic and qos
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = stringResource(R.string.topic) + ": " + message.topic,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = stringResource(R.string.qos) + ": " + message.qos,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            // Message payload
-            Text(
-                text = message.payload,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
     }
 }
 
