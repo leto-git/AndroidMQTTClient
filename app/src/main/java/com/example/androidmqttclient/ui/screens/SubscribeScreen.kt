@@ -123,7 +123,7 @@ fun SubscribeScreen(
         ) {
             items(uiState.receivedMessages.asReversed()) { message ->
                 // Determine subscription color for message based on topic
-                val subscriptionColorLong = uiState.subscriptions
+                val subscriptionColorLong = uiState.activeSubscriptions
                     .find { it.topic == message.topic }?.color ?: 0xFF808080
                 val subscriptionColor = Color(subscriptionColorLong)
                 // Show message item
@@ -137,8 +137,15 @@ fun SubscribeScreen(
         NewSubscriptionDialog(
             onDismiss = { showNewSubscriptionDialog = false },
             onConfirm = { qos, topic, color ->
+                val connectionId = uiState.connectedServer?.id ?: return@NewSubscriptionDialog
+
                 // Create a new subscription
-                val newSubscription = AMCSubscription(qos, topic, color)
+                val newSubscription = AMCSubscription(
+                    serverConnectionId = connectionId,
+                    qos = qos,
+                    topic = topic,
+                    color = color
+                )
 
                 // Callback with new subscription
                 onAddSubscription(newSubscription)
@@ -151,7 +158,7 @@ fun SubscribeScreen(
     // Show the subscriptions dialog if the state is true
     if( showSubscriptionsOverviewDialog ) {
         SubscriptionsOverviewDialog(
-            subscriptions = uiState.subscriptions,
+            subscriptions = uiState.activeSubscriptions,
             onDismiss = { showSubscriptionsOverviewDialog = false },
             onUnsubscribe = { subscription ->
                 onUnsubscribe(subscription)
@@ -238,8 +245,13 @@ fun SubscribeScreenPreview() {
     AndroidMQTTClientTheme {
         SubscribeScreen(
             uiState = AMCUiState(
-                subscriptions = listOf(
-                    AMCSubscription(0, "test/topic", 0xFFFF0000)
+                activeSubscriptions = listOf(
+                    AMCSubscription(
+                        id = 0,
+                        serverConnectionId = 0,
+                        qos =0,
+                        topic = "test/topic",
+                        color = 0xFFFF0000)
                 ),
                 receivedMessages = listOf(
                     AMCMessage("test/topic", "Test message 1",

@@ -36,6 +36,8 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     init {
         // Observe server connections from the database
         observeServerConnections()
+        // Observe active subscriptions
+        observeActiveSubscriptions()
         // Observe incoming messages from the MQTT client
         observeIncomingMessages()
     }
@@ -52,6 +54,23 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 // Update the UI State
                 _uiState.update { currentState ->
                     currentState.copy(serverConnections = connections)
+                }
+            }
+        }
+    }
+
+    /**
+     * Observe active subscriptions.
+     *
+     * This function collects active subscriptions from the database and updates the UI state
+     * accordingly.
+     */
+    private fun observeActiveSubscriptions() {
+        viewModelScope.launch {
+            amcRepository.activeSubscriptions.collect { activeSubscriptions ->
+                // Update the UI State
+                _uiState.update { currentState ->
+                    currentState.copy(activeSubscriptions = activeSubscriptions)
                 }
             }
         }
@@ -168,7 +187,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             val connectionName = uiState.value.connectedServer?.connectionName
             Log.d(tag, "Disconnecting from $connectionName")
 
-            val result = amcRepository.disconnect()
+            val result = amcRepository.disconnect(uiState.value.connectedServer!!)
             result.onSuccess {
                 Log.d(tag, "Successfully disconnected from $connectionName")
                 showInfoMessage("Disconnected from $connectionName")
@@ -216,7 +235,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 _uiState.update { currentState ->
                     currentState.copy(
                         isSubscribing = false,
-                        subscriptions = currentState.subscriptions + subscription,
                         logMessages = currentState.logMessages + AMCLogEntry(
                             timestamp = System.currentTimeMillis(),
                             type = LogEntryType.SUBSCRIBE,
@@ -234,11 +252,11 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
-     * Unsubscribe from a subscription.
+     * Remove a subscription.
      *
      * @param subscription The subscription to remove.
      */
-    fun unsubscribe(subscription: AMCSubscription) {
+    fun removeSubscription(subscription: AMCSubscription) {
         // Update UI state to indicate that unsubscription is in progress
         _uiState.update { it.copy(isUnsubscribing = true) }
 
@@ -255,7 +273,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 _uiState.update { currentState ->
                     currentState.copy(
                         isUnsubscribing = false,
-                        subscriptions = currentState.subscriptions - subscription,
                         logMessages = currentState.logMessages + AMCLogEntry(
                             timestamp = System.currentTimeMillis(),
                             type = LogEntryType.UNSUBSCRIBE,

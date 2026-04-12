@@ -217,11 +217,15 @@ fun SubscriptionsOverviewContentPreview() {
             SubscriptionsOverviewContent(
                 subscriptions = listOf(
                     AMCSubscription(
+                        id = 0,
+                        serverConnectionId = 0,
                         qos = 2,
                         topic = "test/topic/1",
                         color = 0xFFFF0000
                     ),
                     AMCSubscription(
+                        id = 1,
+                        serverConnectionId = 1,
                         qos = 0,
                         topic = "very/long/test/topic/that/will/likely/overflow/the/area/provided/by/the/alert/box/123",
                         color = 0xFF008000

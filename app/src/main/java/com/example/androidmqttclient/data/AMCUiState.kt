@@ -10,7 +10,7 @@ data class AMCUiState(
     val serverConnections: List<AMCServerConnection> = listOf(),
 
     // Subscription related properties
-    val subscriptions: List<AMCSubscription> = listOf(),
+    val activeSubscriptions: List<AMCSubscription> = listOf(),
     val receivedMessages: List<AMCMessage> = listOf(),
 
     // Publish related properties

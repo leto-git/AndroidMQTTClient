@@ -109,7 +109,10 @@ fun AMCApp(
     // Create Database instance
     val database = AMCDatabase.getDatabase(context = LocalContext.current)
     // Create MQTTRepository
-    val amcRepository = AMCRepository(database.serverConnectionDao())
+    val amcRepository = AMCRepository(
+        serverConnectionDao = database.serverConnectionDao(),
+        subscriptionDao = database.subscriptionDao()
+    )
     // Create ViewModel
     val viewModel: AMCViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
@@ -261,7 +264,7 @@ fun AMCApp(
                         .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
                     onAddSubscription = { viewModel.addSubscription(it) },
-                    onUnsubscribe = { viewModel.unsubscribe(it) }
+                    onUnsubscribe = { viewModel.removeSubscription(it) }
                 )
             }
 
