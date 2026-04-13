@@ -3,7 +3,6 @@ package com.example.androidmqttclient.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context.CLIPBOARD_SERVICE
-import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,8 +14,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -40,7 +41,9 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 @Composable
 fun StatusScreen (
     modifier: Modifier = Modifier,
-    uiState: AMCUiState
+    uiState: AMCUiState,
+    onShowCopyConfirmation: (String) -> Unit = {},
+    onClearLog: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -81,7 +84,7 @@ fun StatusScreen (
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
 
-        // Event log headline and copy button
+        // Event log headline and buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -89,6 +92,9 @@ fun StatusScreen (
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val context = LocalContext.current
+            val confirmMessage = stringResource(R.string.copied_to_clipboard)
+
             Text(
                 text = stringResource(R.string.event_log),
                 style = MaterialTheme.typography.headlineSmall,
@@ -98,33 +104,45 @@ fun StatusScreen (
                 )
             )
 
-            val context = LocalContext.current
-            OutlinedButton (
-                onClick = {
-                    val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                    // Join all log entries into one large string
-                    val logText =
-                        connectionStatusString + "\n" +
-                        subscriptionCountString + "\n" +
-                        receivedMessagesString + "\n" +
-                        publishedMessagesString + "\n\n" +
-                        uiState.logMessages.joinToString("\n") { it.getLogEntry() }
-                    val clip = ClipData.newPlainText("MQTT Event Log", logText)
-                    clipboard.setPrimaryClip(clip)
-
-                    // Show a Toast to let the user know it worked
-                    Toast.makeText(
-                        context,
-                        "Log copied to clipboard",
-                        Toast.LENGTH_SHORT).show()
-                },
-                enabled = uiState.logMessages.isNotEmpty()
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = null,
-                )
-                Text("Copy log to clipboard")
+                // Clear log button
+                IconButton(
+                    onClick = onClearLog,
+                    enabled = uiState.logMessages.isNotEmpty()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.clear_log)
+                    )
+                }
+
+                // Copy to clipboard button
+                OutlinedButton (
+                    onClick = {
+                        val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                        // Join all log entries into one large string
+                        val logText =
+                            connectionStatusString + "\n" +
+                            subscriptionCountString + "\n" +
+                            receivedMessagesString + "\n" +
+                            publishedMessagesString + "\n\n" +
+                            uiState.logMessages.joinToString("\n") { it.getLogEntry() }
+                        val clip = ClipData.newPlainText("MQTT Event Log", logText)
+                        clipboard.setPrimaryClip(clip)
+
+                        onShowCopyConfirmation(confirmMessage)
+                    },
+                    enabled = uiState.logMessages.isNotEmpty()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = null,
+                    )
+                    Text(stringResource(R.string.copy_to_clipboard))
+                }
             }
         }
 

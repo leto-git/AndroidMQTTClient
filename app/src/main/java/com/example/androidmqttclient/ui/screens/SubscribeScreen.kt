@@ -2,6 +2,7 @@ package com.example.androidmqttclient.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,9 +11,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
@@ -49,7 +53,8 @@ fun SubscribeScreen(
     modifier: Modifier = Modifier,
     uiState: AMCUiState,
     onAddSubscription: (AMCSubscription) -> Unit = {},
-    onUnsubscribe: (AMCSubscription) -> Unit = {}
+    onUnsubscribe: (AMCSubscription) -> Unit = {},
+    onClearReceivedMessagesLog: () -> Unit = {}
 ) {
     // State to track if the new subscription dialog should be shown
     var showNewSubscriptionDialog by remember { mutableStateOf(false) }
@@ -99,14 +104,30 @@ fun SubscribeScreen(
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
 
-        // Messages headline
-        Text(
-            text = stringResource(R.string.received_messages),
-            style = MaterialTheme.typography.headlineSmall,
+        Row(
             modifier = Modifier
-                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small))
                 .fillMaxWidth()
-        )
+                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small)),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Messages headline
+            Text(
+                text = stringResource(R.string.received_messages),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f)
+            )
+            // Clear log button
+            IconButton(
+                onClick = onClearReceivedMessagesLog,
+                enabled = uiState.receivedMessages.isNotEmpty()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.clear_log)
+                )
+            }
+        }
 
         // List of received messages
         LazyColumn(

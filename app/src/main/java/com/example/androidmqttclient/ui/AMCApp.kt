@@ -131,7 +131,9 @@ fun AMCApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentScreen = MQTTScreen.fromRoute(currentRoute)
-    val canNavigateBack = navController.previousBackStackEntry != null
+    val canNavigateBack =
+        (navController.previousBackStackEntry != null) &&
+        (currentScreen is MQTTScreen.AddServer || currentScreen is MQTTScreen.EditServer)
 
     // Show snackbar if error or info message is set
     LaunchedEffect(uiState.errorMessage, uiState.infoMessage) {
@@ -144,7 +146,7 @@ fun AMCApp(
                 duration = if (isError) SnackbarDuration.Long else SnackbarDuration.Short,
                 withDismissAction = true
             )
-            // Clear error message after showing it
+            // Clear message after showing it
             viewModel.clearStatusMessage()
         }
     }
@@ -196,6 +198,10 @@ fun AMCApp(
         ) {
             // Connect screen
             composable(route = MQTTScreen.Connect.route) {
+                val cannotEditMessage = stringResource(
+                    R.string.cannot_view_connection_while_connected
+                )
+
                 ConnectScreen(
                     modifier = Modifier
                         .fillMaxSize()
@@ -206,7 +212,14 @@ fun AMCApp(
                         viewModel.connect(connection)
                     },
                     onViewConnectionDetails = { connection ->
-                        navController.navigate(MQTTScreen.EditServer.createRoute(connection.id))
+                        // Prevent editing connection of currently connected server
+                        if (uiState.isConnected && uiState.connectedServer?.id == connection.id) {
+                            viewModel.showErrorMessage(cannotEditMessage)
+                            return@ConnectScreen
+                        }
+                        navController.navigate(
+                            MQTTScreen.EditServer.createRoute(connection.id)
+                        )
                     },
                     onDisconnect = { viewModel.disconnect() },
                     onDeleteConnection = { connection ->
@@ -264,7 +277,8 @@ fun AMCApp(
                         .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
                     onAddSubscription = { viewModel.addSubscription(it) },
-                    onUnsubscribe = { viewModel.removeSubscription(it) }
+                    onUnsubscribe = { viewModel.removeSubscription(it) },
+                    onClearReceivedMessagesLog = { viewModel.clearReceivedMessages() }
                 )
             }
 
@@ -278,6 +292,7 @@ fun AMCApp(
                     onPublish = { mqttMessage ->
                         viewModel.publish(mqttMessage)
                     },
+                    onClearPublishedMessagesLog = { viewModel.clearPublishedMessages() }
                 )
             }
 
@@ -287,7 +302,11 @@ fun AMCApp(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
-                    uiState = uiState
+                    uiState = uiState,
+                    onShowCopyConfirmation = { confirmMessage ->
+                        viewModel.showInfoMessage(confirmMessage)
+                    },
+                    onClearLog = { viewModel.clearLog() }
                 )
             }
 
@@ -351,7 +370,9 @@ fun MQTTBottomBar(
                 icon = { Icon(screen.icon, contentDescription = null) },
                 selected = isSelected,
                 onClick = {
-                    if (currentRoute != screen.route) {
+                    if (currentRoute?.substringBefore("/") !=
+                        screen.route.substringBefore("/")
+                    ) {
                         navController.navigate(screen.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true

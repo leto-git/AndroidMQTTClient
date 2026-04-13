@@ -197,6 +197,9 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     currentState.copy(
                         isConnected = false,
                         connectedServer = null,
+                        // Clear received and published messages
+                        receivedMessages = emptyList(),
+                        publishedMessages = emptyList(),
                         logMessages = currentState.logMessages + AMCLogEntry(
                             timestamp = System.currentTimeMillis(),
                             type  = LogEntryType.DISCONNECT,
@@ -329,6 +332,27 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 showErrorMessage("Could not publish to ${message.topic}: ${error.message}")
             }
         }
+    }
+
+    /**
+     * Clear the list of received messages.
+     */
+    fun clearReceivedMessages() {
+        _uiState.update { it.copy(receivedMessages = emptyList()) }
+    }
+
+    /**
+     * Clear the list of published messages.
+     */
+    fun clearPublishedMessages() {
+        _uiState.update { it.copy(publishedMessages = emptyList()) }
+    }
+
+    /**
+     * Clear the list of log messages.
+     */
+    fun clearLog() {
+        _uiState.update { it.copy(logMessages = emptyList()) }
     }
 
     /**

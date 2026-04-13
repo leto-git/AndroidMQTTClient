@@ -9,11 +9,15 @@
     <string name="back">Back</string>
     <string name="back_button">Back</string>
     <string name="cancel">Cancel</string>
+    <string name="cannot_view_connection_while_connected">Cannot edit connection details of the currently connected server! Please disconnect first.</string>
     <string name="clean_session">Clean session</string>
+    <string name="clear_log">Clear log</string>
     <string name="client_id">Client ID</string>
     <string name="close">Close</string>
     <string name="color_for_subscription_messages">Color for subscription messages</string>
     <string name="connect">Connect</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="copy_to_clipboard">Copy to clipboard</string>
     <string name="delete">Delete</string>
     <string name="delete_connection">Delete connection</string>
     <string name="disconnect">Disconnect</string>

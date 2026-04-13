@@ -10,9 +10,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -46,6 +50,7 @@ fun PublishScreen(
     modifier: Modifier = Modifier,
     uiState: AMCUiState,
     onPublish: (AMCMessage) -> Unit = {},
+    onClearPublishedMessagesLog: () -> Unit = {}
 ) {
     // State variables for input fields
     var topic by remember { mutableStateOf("") }
@@ -128,8 +133,6 @@ fun PublishScreen(
                 // TODO: Check for valid input
                 // Publish and show confirmation snackBar
                 onPublish(AMCMessage(topic, message, qos, retain ))
-                // Reset message field
-                message = ""
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -141,14 +144,30 @@ fun PublishScreen(
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
 
-        // Messages headline
-        Text(
-            text = stringResource(R.string.published_messages),
-            style = MaterialTheme.typography.headlineSmall,
+        Row(
             modifier = Modifier
-                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small))
                 .fillMaxWidth()
-        )
+                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small)),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Messages headline
+            Text(
+                text = stringResource(R.string.published_messages),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f)
+            )
+            // Clear log button
+            IconButton(
+                onClick = onClearPublishedMessagesLog,
+                enabled = uiState.publishedMessages.isNotEmpty()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.clear_log)
+                )
+            }
+        }
 
         // List of published messages
         LazyColumn(
