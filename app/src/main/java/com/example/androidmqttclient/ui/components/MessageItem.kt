@@ -31,12 +31,10 @@ import com.example.androidmqttclient.data.formatTimestamp
  * Composable function for displaying a single message item.
  *
  * @param message The message to display.
- * @param subscriptionColor The color of the subscription.
  */
 @Composable
 fun MessageItem(
-    message: AMCMessage,
-    subscriptionColor: Color = MaterialTheme.colorScheme.primary
+    message: AMCMessage
 ) {
     // Format timestamp into a readable string
     val formattedDate = remember(message.timestamp) {
@@ -49,6 +47,8 @@ fun MessageItem(
             .height(IntrinsicSize.Min)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
+        val subscriptionColor = message.subscriptionColor ?: Color.Gray
+
         // Box showing the subscription color
         Box(
             modifier = Modifier

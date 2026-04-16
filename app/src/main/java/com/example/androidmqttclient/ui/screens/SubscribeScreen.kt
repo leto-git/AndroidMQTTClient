@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -135,12 +134,8 @@ fun SubscribeScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(uiState.receivedMessages.asReversed()) { message ->
-                // Determine subscription color for message based on topic
-                val subscriptionColorLong = uiState.activeSubscriptions
-                    .find { it.topic == message.topic }?.color ?: 0xFF808080
-                val subscriptionColor = Color(subscriptionColorLong)
                 // Show message item
-                MessageItem(message, subscriptionColor)
+                MessageItem(message)
             }
         }
     }

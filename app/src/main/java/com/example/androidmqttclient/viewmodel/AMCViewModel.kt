@@ -1,6 +1,7 @@
 package com.example.androidmqttclient.viewmodel
 
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidmqttclient.data.AMCLogEntry
@@ -10,6 +11,7 @@ import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.AMCSubscription
 import com.example.androidmqttclient.data.LogEntryType
 import com.example.androidmqttclient.data.repository.AMCRepository
+import com.example.androidmqttclient.data.topicMatchesPattern
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,8 +73,23 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             amcRepository.activeSubscriptions.collect { activeSubscriptions ->
                 // Update the UI State
                 _uiState.update { currentState ->
-                    currentState.copy(activeSubscriptions = activeSubscriptions)
+                    // Determine subscription color of messages that have not been assigned yet
+                    // This can happen if the message is received before the subscription is added,
+                    // for example with retained messages that are sent immediately after subscribing
+                    val messages = currentState.receivedMessages.map { msg ->
+                        if (msg.subscriptionColor == null ) {
+                            msg.copy(subscriptionColor = determineSubscriptionColor(msg, activeSubscriptions))
+                        } else {
+                            msg
+                        }
+                    }
+
+                    currentState.copy(
+                        activeSubscriptions = activeSubscriptions,
+                        receivedMessages = messages
+                    )
                 }
+
             }
         }
     }
@@ -86,6 +103,10 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     private fun observeIncomingMessages() {
         viewModelScope.launch {
             amcRepository.incomingMessages.collect { newMessage ->
+                // Determine the subscription color for the message
+                val color = determineSubscriptionColor(newMessage)
+                val newMessage = newMessage.copy(subscriptionColor = color)
+
                 // Update the UI State
                 _uiState.update { currentState ->
                     currentState.copy(
@@ -385,5 +406,31 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 infoMessage = null
             )
         }
+    }
+
+    /**
+     * Determine the subscription color for a message based on the list of active subscriptions.
+     *
+     * @param message The message to determine the color for.
+     * @param subscriptions The list of active subscriptions.
+     *
+     * @return The subscription color for the message, or null if no matching subscription is found.
+     */
+    fun determineSubscriptionColor(
+        message: AMCMessage,
+        subscriptions: List<AMCSubscription> = uiState.value.activeSubscriptions
+    ): Color? {
+        // Determine all potentially matching subscriptions
+        val matchingSubscription = subscriptions.filter { sub ->
+            topicMatchesPattern(message.topic, sub.topic)
+        }
+        // Sort matching subscriptions by topic length and absence of wildcard
+        val bestMatch = matchingSubscription.maxWithOrNull(
+            compareBy<AMCSubscription> { it.topic.split("/").size }
+                .thenBy { !it.topic.contains("#")}
+                .thenBy { !it.topic.contains("+")}
+        )
+        // Set the subscription color
+        return if( bestMatch != null ) Color(bestMatch.color) else null
     }
 }
