@@ -22,11 +22,15 @@ private const val TAG = "MainActivity"
  * Main activity of the application.
  */
 class MainActivity : ComponentActivity() {
-    /**
-     * Called when the activity is starting.
-     */
     // Create repository
-    private lateinit var repository: AMCRepository
+    private val repository: AMCRepository by lazy {
+        val database = AMCDatabase.getDatabase(applicationContext)
+        AMCRepository(
+            serverConnectionDao = database.serverConnectionDao(),
+            subscriptionDao = database.subscriptionDao()
+        )
+    }
+
     // Create ViewModel
     val viewModel: AMCViewModel by viewModels {
         object : ViewModelProvider.Factory {
@@ -45,16 +49,7 @@ class MainActivity : ComponentActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         Log.d(TAG, "onCreate() called")
-
-        // Create Database instance
-        val database = AMCDatabase.getDatabase(this)
-        // Create repository
-        repository = AMCRepository(
-            serverConnectionDao = database.serverConnectionDao(),
-            subscriptionDao = database.subscriptionDao()
-        )
 
         enableEdgeToEdge()
         setContent {
