@@ -219,11 +219,14 @@ class AMCRepository(
      * the clean session flag is set to true.
      *
      * @param connection The connection object containing the server information.
+     * @param quiesceTime The time in milliseconds to allow for existing work to finish before
+     * disconnecting. A value of null will use the paho default behaviour of waiting up to 30 seconds.
      *
      * @return A [Result] object indicating the success or failure of the disconnection.
      */
     suspend fun disconnect(
-        connection: AMCServerConnection
+        connection: AMCServerConnection,
+        quiesceTime: Long ?= null
     ): Result<Unit> = withContext(Dispatchers.IO + NonCancellable) {
         val client = mqttClient
         if (client == null) {
@@ -234,7 +237,11 @@ class AMCRepository(
         try {
             if(client.isConnected) {
                 // Disconnect from the server
-                client.disconnect()
+                if(quiesceTime == null){
+                    client.disconnect()
+                } else {
+                    client.disconnect(quiesceTime)
+                }
 
                 // Clear subscriptions from the database if clean session is true
                 if (connection.cleanSession) {

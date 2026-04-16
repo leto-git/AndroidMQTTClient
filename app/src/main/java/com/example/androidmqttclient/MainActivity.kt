@@ -65,26 +65,50 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
+     * Called when the activity is losing focus but may still be visible.
+     */
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause() called")
+    }
+
+    /**
      * Called when the activity is no longer visible to the user.
      */
     override fun onStop() {
         super.onStop()
         Log.d(TAG, "onStop() called")
-
-        if( isFinishing ) {
-            Log.d(TAG, "App is closing (isFinishing)")
-            if( viewModel.uiState.value.isConnected ) {
-                Log.d(TAG, "Sending graceful disconnect")
-                viewModel.disconnect()
-            }
-        } else {
-            Log.d(TAG, "App is losing focus. No graceful disconnect needed")
-        }
     }
 
+    /**
+     * Called when the activity is no longer used and is being destroyed.
+     */
     override fun onDestroy() {
         super.onDestroy()
 
         Log.d(TAG, "onDestroy() called")
+
+        if( isFinishing ) {
+            Log.d(TAG, "App is closing (isFinishing)")
+
+            val currentState = viewModel.uiState.value
+            if( currentState.isConnected && currentState.connectedServer != null ) {
+                Log.d(TAG, "Sending graceful disconnect")
+                // Graceful disconnect inside runBlocking to make sure disconnect is sent.
+                try {
+                    runBlocking(Dispatchers.IO) {
+                        repository.disconnect(
+                            connection = currentState.connectedServer,
+                            quiesceTime = 0
+                        )
+                    }
+                    Log.d(TAG, "Graceful disconnect packet sent.")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error during disconnect", e)
+                }
+            }
+        } else {
+            Log.d(TAG, "App is losing focus. No graceful disconnect needed")
+        }
     }
 }
