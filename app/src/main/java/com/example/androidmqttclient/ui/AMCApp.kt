@@ -142,7 +142,9 @@ fun AMCApp(
         bottomBar = {
             MQTTBottomBar(
                 currentRoute = currentRoute,
-                navController = navController
+                navController = navController,
+                isConnected = uiState.isConnected,
+                onShowErrorMessage = { viewModel.showErrorMessage(it) }
             )
         },
         snackbarHost = {
@@ -332,7 +334,9 @@ fun MQTTAppBar(
 @Composable
 fun MQTTBottomBar(
     currentRoute: String?,
-    navController: NavHostController
+    navController: NavHostController,
+    isConnected: Boolean,
+    onShowErrorMessage: (String) -> Unit,
 ) {
     NavigationBar {
         val bottomTabScreens = listOf(
@@ -345,11 +349,24 @@ fun MQTTBottomBar(
         bottomTabScreens.forEach { screen ->
             val isSelected = currentRoute?.substringBefore("/") ==
                     screen.route.substringBefore("/")
+            val connectFirstMessage = stringResource(R.string.please_connect_first)
 
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = null) },
                 selected = isSelected,
+                enabled = if (screen == MQTTScreen.Subscribe || screen == MQTTScreen.Publish) {
+                    isConnected
+                } else {
+                    true
+                },
                 onClick = {
+                    // Prevent navigation to subscribe and publish if not connected
+                    if( (screen == MQTTScreen.Subscribe || screen == MQTTScreen.Publish) &&
+                        !isConnected ) {
+                        onShowErrorMessage(connectFirstMessage)
+                        return@NavigationBarItem
+                    }
+
                     if (currentRoute?.substringBefore("/") !=
                         screen.route.substringBefore("/")
                     ) {
