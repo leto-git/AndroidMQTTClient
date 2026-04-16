@@ -22,11 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -49,15 +44,13 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 fun PublishScreen(
     modifier: Modifier = Modifier,
     uiState: AMCUiState,
+    onTopicChange: (String) -> Unit = {},
+    onQosChange: (Int) -> Unit = {},
+    onRetainToggle: () -> Unit = {},
+    onMessageChange: (String) -> Unit = {},
     onPublish: (AMCMessage) -> Unit = {},
     onClearPublishedMessagesLog: () -> Unit = {}
 ) {
-    // State variables for input fields
-    var topic by remember { mutableStateOf("") }
-    var qos by remember { mutableIntStateOf(0) }
-    var retain by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("") }
-
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -66,8 +59,8 @@ fun PublishScreen(
         // TODO: Enable jumping to next field on enter with `keyboardOptions.imeAction`
         // Topic input
         OutlinedTextField(
-            value = topic,
-            onValueChange = { topic = it },
+            value = uiState.publishTopic,
+            onValueChange = onTopicChange,
             label = { Text(stringResource(R.string.topic)) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -83,11 +76,16 @@ fun PublishScreen(
         ) {
             // QoS input
             OutlinedTextField(
-                value = if (qos < 0 || qos > 2) "" else qos.toString(),
+                value = if (uiState.publishQos < 0 || uiState.publishQos > 2) "" else uiState.publishQos.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 1 character (QoS max is 2)
-                    if (newValue.all { it.isDigit() } && newValue.length <= 1) {
-                        qos = newValue.toIntOrNull() ?: -1
+                    if (newValue.isEmpty()) {
+                        onQosChange(-1)
+                    } else if (newValue.all { it.isDigit() } && newValue.length <= 1) {
+                        val qos = newValue.toInt()
+                        if (qos in 0..2) {
+                            onQosChange(qos)
+                        }
                     }
                 },
                 label = { Text(stringResource(R.string.qos)) },
@@ -102,13 +100,13 @@ fun PublishScreen(
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp)
-                    .clickable { retain = !retain },
+                    .clickable { onRetainToggle() },
                 horizontalArrangement = Arrangement.spacedBy(0.5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = retain,
-                    onCheckedChange = { retain = it }
+                    checked = uiState.publishRetain,
+                    onCheckedChange = { onRetainToggle() }
                 )
                 Text(
                     text =stringResource(R.string.retain),
@@ -119,8 +117,8 @@ fun PublishScreen(
 
         // Message input
         OutlinedTextField(
-            value = message,
-            onValueChange = { message = it },
+            value = uiState.publishMessage,
+            onValueChange = onMessageChange,
             label = { Text(stringResource(R.string.message)) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -132,12 +130,19 @@ fun PublishScreen(
             onClick = {
                 // TODO: Check for valid input
                 // Publish and show confirmation snackBar
-                onPublish(AMCMessage(topic, message, qos, retain ))
+                onPublish(
+                    AMCMessage(
+                        uiState.publishTopic,
+                        uiState.publishMessage,
+                        uiState.publishQos,
+                        uiState.publishRetain
+                    )
+                )
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = dimensionResource(R.dimen.padding_small)),
-            enabled = topic.isNotBlank() && message.isNotBlank()
+            enabled = uiState.publishTopic.isNotBlank() && uiState.publishMessage.isNotBlank()
         ) {
             Text(stringResource(R.string.publish))
         }

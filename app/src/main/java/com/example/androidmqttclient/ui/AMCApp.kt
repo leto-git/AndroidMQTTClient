@@ -271,9 +271,11 @@ fun AMCApp(
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
                     uiState = uiState,
-                    onPublish = { mqttMessage ->
-                        viewModel.publish(mqttMessage)
-                    },
+                    onTopicChange = { viewModel.updatePublishTopic(it) },
+                    onQosChange = { viewModel.updatePublishQos(it) },
+                    onRetainToggle = { viewModel.togglePublishRetain() },
+                    onMessageChange = { viewModel.updatePublishMessage(it) },
+                    onPublish = { viewModel.publish(it) },
                     onClearPublishedMessagesLog = { viewModel.clearPublishedMessages() }
                 )
             }

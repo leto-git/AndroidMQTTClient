@@ -409,6 +409,34 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     }
 
     /**
+     * Update the publish topic in the UI state.
+     */
+    fun updatePublishTopic(topic: String) {
+        _uiState.update { it.copy(publishTopic = topic) }
+    }
+
+    /**
+     * Update the publish Qos in the UI state.
+     */
+    fun updatePublishQos(qos: Int) {
+        _uiState.update { it.copy(publishQos = qos) }
+    }
+
+    /**
+     * Toggle the publish retain in the UI state.
+     */
+    fun togglePublishRetain() {
+        _uiState.update { it.copy(publishRetain = !it.publishRetain) }
+    }
+
+    /**
+     * Update the publish message in the UI state.
+     */
+    fun updatePublishMessage(message: String) {
+        _uiState.update { it.copy(publishMessage = message) }
+    }
+
+    /**
      * Determine the subscription color for a message based on the list of active subscriptions.
      *
      * @param message The message to determine the color for.
@@ -416,7 +444,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      *
      * @return The subscription color for the message, or null if no matching subscription is found.
      */
-    fun determineSubscriptionColor(
+    private fun determineSubscriptionColor(
         message: AMCMessage,
         subscriptions: List<AMCSubscription> = uiState.value.activeSubscriptions
     ): Color? {

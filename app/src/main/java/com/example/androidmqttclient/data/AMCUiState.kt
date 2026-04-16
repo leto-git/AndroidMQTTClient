@@ -14,6 +14,10 @@ data class AMCUiState(
     val receivedMessages: List<AMCMessage> = listOf(),
 
     // Publish related properties
+    val publishTopic: String = "",
+    val publishQos: Int = 0,
+    val publishRetain: Boolean = false,
+    val publishMessage: String = "",
     val publishedMessages: List<AMCMessage> = listOf(),
 
     // Status related properties
