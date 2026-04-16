@@ -9,6 +9,7 @@ import com.example.androidmqttclient.data.AMCSubscriptionDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -223,7 +224,7 @@ class AMCRepository(
      */
     suspend fun disconnect(
         connection: AMCServerConnection
-    ): Result<Unit> = withContext(Dispatchers.IO) {
+    ): Result<Unit> = withContext(Dispatchers.IO + NonCancellable) {
         val client = mqttClient
         if (client == null) {
             // Can't disconnect, return success since desired disconnect state is achieved.

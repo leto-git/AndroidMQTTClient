@@ -27,6 +27,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     private val _uiState = MutableStateFlow(AMCUiState())
     // Read-only property to exposes the current state
     val uiState: StateFlow<AMCUiState> = _uiState.asStateFlow()
+
     // Tag for logging
     private val tag: String = "MQTTViewModel"
 
@@ -180,14 +181,19 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
 
     /**
      * Disconnect from the current server.
+     *
      */
     fun disconnect() {
+        // Get current server and name
+        val server = uiState.value.connectedServer ?: return
+        val connectionName = server.connectionName
+
+        // Update UI state to indicate that disconnection is in progress
         // Disconnect from server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
-            val connectionName = uiState.value.connectedServer?.connectionName
             Log.d(tag, "Disconnecting from $connectionName")
 
-            val result = amcRepository.disconnect(uiState.value.connectedServer!!)
+            val result = amcRepository.disconnect(server)
             result.onSuccess {
                 Log.d(tag, "Successfully disconnected from $connectionName")
                 showInfoMessage("Disconnected from $connectionName")

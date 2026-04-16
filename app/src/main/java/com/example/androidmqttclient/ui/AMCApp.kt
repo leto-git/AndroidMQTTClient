@@ -34,12 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -49,15 +45,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.AMCDatabase
-import com.example.androidmqttclient.data.repository.AMCRepository
-import com.example.androidmqttclient.ui.screens.ConnectScreen
-import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.ui.screens.AddServerConnectionScreen
+import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen
+import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.ui.screens.StatusScreen
-import com.example.androidmqttclient.viewmodel.AMCViewModel
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
+import com.example.androidmqttclient.viewmodel.AMCViewModel
 
 /**
  * Sealed class representing different MQTT screens.
@@ -104,23 +98,9 @@ sealed class MQTTScreen (
  */
 @Composable
 fun AMCApp(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    viewModel: AMCViewModel
 ) {
-    // Create Database instance
-    val database = AMCDatabase.getDatabase(context = LocalContext.current)
-    // Create MQTTRepository
-    val amcRepository = AMCRepository(
-        serverConnectionDao = database.serverConnectionDao(),
-        subscriptionDao = database.subscriptionDao()
-    )
-    // Create ViewModel
-    val viewModel: AMCViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T: ViewModel> create (modelClass: Class<T>): T {
-                return AMCViewModel(amcRepository) as T
-            }
-        }
-    )
     // UI state from ViewModel
     val uiState by viewModel.uiState.collectAsState()
 
