@@ -15,14 +15,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +51,8 @@ fun StatusScreen (
     onShowCopyConfirmation: (String) -> Unit = {},
     onClearLog: () -> Unit = {}
 ) {
+    var showClearLogDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -52,11 +60,17 @@ fun StatusScreen (
     ) {
         // Strings
         val connectionStatusString =
-            if (uiState.isConnected) "Connected to server: ${uiState.connectedServer?.connectionName}"
-            else "Not connected"
-        val subscriptionCountString = "Subscribed to ${uiState.activeSubscriptions.size} topics"
-        val receivedMessagesString = "Received ${uiState.numReceivedMessages} messages"
-        val publishedMessagesString = "Published ${uiState.numPublishedMessages} messages"
+            if (uiState.isConnected && uiState.connectedServer != null) stringResource(
+                R.string.connected_to_server_name,
+                uiState.connectedServer.connectionName
+            )
+            else stringResource(R.string.not_connected)
+        val subscriptionCountString =
+            stringResource(R.string.subscribed_to_num_topics, uiState.activeSubscriptions.size)
+        val receivedMessagesString =
+            stringResource(R.string.received_num_messages, uiState.numReceivedMessages)
+        val publishedMessagesString =
+            stringResource(R.string.published_num_messages, uiState.numPublishedMessages)
 
         // General information
         Column(
@@ -110,7 +124,7 @@ fun StatusScreen (
             ) {
                 // Clear log button
                 IconButton(
-                    onClick = onClearLog,
+                    onClick = { showClearLogDialog = true },
                     enabled = uiState.logMessages.isNotEmpty()
                 ) {
                     Icon(
@@ -154,6 +168,31 @@ fun StatusScreen (
             items(uiState.logMessages.asReversed() ) { logEntry ->
                 LogEntryItem(logEntry)
             }
+        }
+
+        // Confirmation Dialog
+        if (showClearLogDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearLogDialog = false },
+                title = { Text(stringResource(R.string.clear_event_log)) },
+                text = { Text(stringResource(R.string.are_you_sure_you_want_to_delete_the_event_log)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClearLogDialog = false
+                            onClearLog()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.clear))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearLogDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
         }
     }
 }

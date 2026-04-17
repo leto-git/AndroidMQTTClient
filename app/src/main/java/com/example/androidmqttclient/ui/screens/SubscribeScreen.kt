@@ -12,12 +12,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +61,7 @@ fun SubscribeScreen(
     // State to track if the new subscription dialog should be shown
     var showNewSubscriptionDialog by remember { mutableStateOf(false) }
     var showSubscriptionsOverviewDialog by remember { mutableStateOf(false) }
+    var showClearLogDialog by remember { mutableStateOf(false) }
 
     // Column holding buttons and list of messages
     Column(
@@ -118,7 +122,7 @@ fun SubscribeScreen(
             )
             // Clear log button
             IconButton(
-                onClick = onClearReceivedMessagesLog,
+                onClick = { showClearLogDialog = true },
                 enabled = uiState.receivedMessages.isNotEmpty()
             ) {
                 Icon(
@@ -170,6 +174,31 @@ fun SubscribeScreen(
             onDismiss = { showSubscriptionsOverviewDialog = false },
             onUnsubscribe = { subscription ->
                 onUnsubscribe(subscription)
+            }
+        )
+    }
+
+    // Confirmation Dialog
+    if (showClearLogDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearLogDialog = false },
+            title = { Text(stringResource(R.string.clear_received_messages)) },
+            text = { Text(stringResource(R.string.are_you_sure_you_want_to_delete_the_received_messages)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearLogDialog = false
+                        onClearReceivedMessagesLog()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.clear))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearLogDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }

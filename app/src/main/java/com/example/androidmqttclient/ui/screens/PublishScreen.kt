@@ -12,7 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -21,7 +23,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -51,6 +58,8 @@ fun PublishScreen(
     onPublish: (AMCMessage) -> Unit = {},
     onClearPublishedMessagesLog: () -> Unit = {}
 ) {
+    var showClearLogDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -164,7 +173,7 @@ fun PublishScreen(
             )
             // Clear log button
             IconButton(
-                onClick = onClearPublishedMessagesLog,
+                onClick = { showClearLogDialog = true },
                 enabled = uiState.publishedMessages.isNotEmpty()
             ) {
                 Icon(
@@ -183,6 +192,31 @@ fun PublishScreen(
                 // Show message item
                 MessageItem(message)
             }
+        }
+
+        // Confirmation Dialog
+        if (showClearLogDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearLogDialog = false },
+                title = { Text(stringResource(R.string.clear_published_messages)) },
+                text = { Text(stringResource(R.string.are_you_sure_you_want_to_delete_the_published_messages)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClearLogDialog = false
+                            onClearPublishedMessagesLog()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.clear))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearLogDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
         }
     }
 }
