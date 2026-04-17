@@ -11,6 +11,8 @@ data class AMCUiState(
 
     // Subscription related properties
     val activeSubscriptions: List<AMCSubscription> = listOf(),
+    val receivedMessagesLimit: Int = 200,
+    val numReceivedMessages: Int = 0,
     val receivedMessages: List<AMCMessage> = listOf(),
 
     // Publish related properties
@@ -18,6 +20,9 @@ data class AMCUiState(
     val publishQos: Int = 0,
     val publishRetain: Boolean = false,
     val publishMessage: String = "",
+
+    val publishedMessagesLimit: Int = 200,
+    val numPublishedMessages: Int = 0,
     val publishedMessages: List<AMCMessage> = listOf(),
 
     // Status related properties
@@ -26,9 +31,10 @@ data class AMCUiState(
     val isUnsubscribing: Boolean = false,
     val isPublishing: Boolean = false,
 
-    // Error and info messages displayed to the user as snackBar
+    // Status messages and logging
     val errorMessage: String? = null,
     val infoMessage: String? = null,
 
+    val logMessagesLimit: Int = 200,
     val logMessages: List<AMCLogEntry> = listOf()
 )

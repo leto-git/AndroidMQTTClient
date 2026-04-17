@@ -55,8 +55,8 @@ fun StatusScreen (
             if (uiState.isConnected) "Connected to server: ${uiState.connectedServer?.connectionName}"
             else "Not connected"
         val subscriptionCountString = "Subscribed to ${uiState.activeSubscriptions.size} topics"
-        val receivedMessagesString = "Received ${uiState.receivedMessages.size} messages"
-        val publishedMessagesString = "Published ${uiState.publishedMessages.size} messages"
+        val receivedMessagesString = "Received ${uiState.numReceivedMessages} messages"
+        val publishedMessagesString = "Published ${uiState.numPublishedMessages} messages"
 
         // General information
         Column(
