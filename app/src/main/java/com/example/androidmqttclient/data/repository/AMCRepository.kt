@@ -147,6 +147,19 @@ class AMCRepository(
             // Generate client ID if none is provided
             val clientId = connection.clientID.ifBlank { MqttClient.generateClientId() }
 
+            // Clean up old client if it exists
+            mqttClient?.let { existingClient ->
+                try {
+                    if (existingClient.isConnected) {
+                        existingClient.disconnectForcibly()
+                    }
+                    existingClient.close()
+                    mqttClient = null
+                } catch (e: Exception) {
+                    Log.e(tag, "Error cleaning up old client before re-connect", e)
+                }
+            }
+
             // Create MQTT client
             mqttClient = MqttClient(
                 address,
@@ -249,11 +262,15 @@ class AMCRepository(
                 }
             }
 
-            // Reset connected ID, lear callback listener and set mqttClient to null
+            // Reset connected ID, clear callback listener, close the client and set it to null
             _connectedServerId.value = null
             client.setCallback(null)
+            try {
+                client.close()
+            } catch (e: Exception) {
+                Log.e(tag, "Error closing client", e)
+            }
             mqttClient = null
-
             Log.d(tag, "Disconnected")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -261,9 +278,11 @@ class AMCRepository(
 
             // In case of error also reset the client state
             _connectedServerId.value = null
-            client.setCallback(null)
+            mqttClient?.let {
+                it.setCallback(null)
+                try { it.close() } catch (_: Exception) { /* ignore */ }
+            }
             mqttClient = null
-
             Result.failure(e)
         }
     }

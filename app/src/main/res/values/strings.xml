@@ -65,4 +65,5 @@
     <string name="are_you_sure_you_want_to_delete_the_published_messages">Are you sure you want to clear the history of published messages?</string>
     <string name="clear_received_messages">Clear received messages</string>
     <string name="are_you_sure_you_want_to_delete_the_received_messages">Are you sure you want to clear the history of received messages?</string>
+    <string name="already_connected_to_a_server">Already connected to a server. Please disconnect first.</string>
 </resources>

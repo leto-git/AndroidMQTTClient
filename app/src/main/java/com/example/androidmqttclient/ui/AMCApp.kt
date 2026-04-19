@@ -180,9 +180,8 @@ fun AMCApp(
         ) {
             // Connect screen
             composable(route = MQTTScreen.Connect.route) {
-                val cannotEditMessage = stringResource(
-                    R.string.cannot_view_connection_while_connected
-                )
+                val cannotEditMessage = stringResource(R.string.cannot_view_connection_while_connected)
+                val alreadyConnectedMessage = stringResource(R.string.already_connected_to_a_server)
 
                 ConnectScreen(
                     modifier = Modifier
@@ -191,7 +190,12 @@ fun AMCApp(
                     uiState = uiState,
                     onAddConnection = { navController.navigate(MQTTScreen.AddServer.route) },
                     onConnect = { connection ->
-                        viewModel.connect(connection)
+                        // Prevent connecting if already connected
+                        if (uiState.isConnected) {
+                            viewModel.showErrorMessage(alreadyConnectedMessage)
+                        } else {
+                            viewModel.connect(connection)
+                        }
                     },
                     onViewConnectionDetails = { connection ->
                         // Prevent editing connection of currently connected server
