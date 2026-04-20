@@ -52,7 +52,7 @@ fun ServerConnectionForm(
     var username by remember { mutableStateOf(existingConnection?.username ?: "") }
     var password by remember { mutableStateOf(existingConnection?.password ?: "") }
     var keepAlive by remember { mutableIntStateOf(existingConnection?.keepAlive ?: 60) }
-    var cleanSession by remember { mutableStateOf(existingConnection?.cleanSession ?: false) }
+    var cleanSession by remember { mutableStateOf(existingConnection?.cleanSession ?: true) }
     var willQos by remember { mutableIntStateOf(existingConnection?.willQos ?: 0) }
     var willRetain by remember { mutableStateOf(existingConnection?.willRetain ?: false) }
     var willTopic by remember { mutableStateOf(existingConnection?.willTopic ?: "") }
