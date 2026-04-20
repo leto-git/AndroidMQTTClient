@@ -250,14 +250,12 @@ fun ConnectionItem(
 ) {
     var showDropDownMenu by remember { mutableStateOf(false) }
     val color = if (isConnected) ConnectionGreen else ConnectionRed
-    val shape = MaterialTheme.shapes.medium
 
     Box {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-                .clip(shape)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = { showDropDownMenu = true }
