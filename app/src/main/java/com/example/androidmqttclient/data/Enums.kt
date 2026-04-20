@@ -1,0 +1,32 @@
+package com.example.androidmqttclient.data
+
+/**
+ * Enum class for representing the MQTT version.
+ */
+enum class MQTTVersion {
+    V3_1_1,
+    V5
+}
+
+/**
+ * Enum class for representing the MQTT connection state.
+ */
+enum class MQTTConnectionState {
+    CONNECTING,
+    CONNECTED,
+    DISCONNECTED,
+    DISCONNECTING,
+    RECONNECTING
+}
+
+/**
+ * Enum class representing log entry types.
+ */
+enum class LogEntryType(val label: String) {
+    CONNECT("CONNECT"),
+    DISCONNECT("DISCONNECT"),
+    SUBSCRIBE("SUBSCRIBE"),
+    UNSUBSCRIBE("UNSUBSCRIBE"),
+    PUBLISH_SENT("PUBLISH SENT"),
+    PUBLISH_RECEIVED("PUBLISH RECEIVED"),
+}

@@ -41,6 +41,7 @@ import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.AMCLogEntry
 import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.LogEntryType
+import com.example.androidmqttclient.data.MQTTConnectionState
 import com.example.androidmqttclient.data.formatTimestamp
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
@@ -60,10 +61,10 @@ fun StatusScreen (
     ) {
         // Strings
         val connectionStatusString =
-            if (uiState.isConnected && uiState.connectedServer != null) stringResource(
-                R.string.connected_to_server_name,
-                uiState.connectedServer.connectionName
-            )
+            if (uiState.connectionState == MQTTConnectionState.CONNECTED &&
+                uiState.connectedServer != null)
+                stringResource(R.string.connected_to_server_name,
+                    uiState.connectedServer.connectionName)
             else stringResource(R.string.not_connected)
         val subscriptionCountString =
             stringResource(R.string.subscribed_to_num_topics, uiState.activeSubscriptions.size)
@@ -245,7 +246,7 @@ fun StatusScreenPreview() {
     AndroidMQTTClientTheme {
         StatusScreen(
             uiState = AMCUiState(
-                isConnected = true,
+                connectionState = MQTTConnectionState.CONNECTED,
                 connectedServer = null,
                 logMessages = listOf(
                     AMCLogEntry(timestamp = 0, type = LogEntryType.CONNECT, message = "Connected to server"),

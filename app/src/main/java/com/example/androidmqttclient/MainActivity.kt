@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.androidmqttclient.data.AMCDatabase
+import com.example.androidmqttclient.data.MQTTConnectionState
 import com.example.androidmqttclient.data.repository.AMCRepository
 import com.example.androidmqttclient.ui.AMCApp
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
@@ -87,7 +88,8 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "App is closing (isFinishing)")
 
             val currentState = viewModel.uiState.value
-            if( currentState.isConnected && currentState.connectedServer != null ) {
+            if( currentState.connectionState == MQTTConnectionState.CONNECTED &&
+                currentState.connectedServer != null ) {
                 Log.d(TAG, "Sending graceful disconnect")
                 // Graceful disconnect inside runBlocking to make sure disconnect is sent.
                 try {

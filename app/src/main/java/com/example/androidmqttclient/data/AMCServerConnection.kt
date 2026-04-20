@@ -5,14 +5,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Enum class for representing the MQTT version.
- */
-enum class MQTTVersion {
-    V3_1_1,
-    V5
-}
-
-/**
  * Data class for representing a MQTT server connection stored in a Room database.
  */
 @Entity(

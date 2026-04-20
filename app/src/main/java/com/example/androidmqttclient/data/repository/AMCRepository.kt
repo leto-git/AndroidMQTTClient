@@ -6,6 +6,7 @@ import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.AMCServerConnectionDao
 import com.example.androidmqttclient.data.AMCSubscription
 import com.example.androidmqttclient.data.AMCSubscriptionDao
+import com.example.androidmqttclient.data.MQTTConnectionState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -51,6 +53,11 @@ class AMCRepository(
     // Track the current server connection and expose it as a state flow
     private val _connectedServer = MutableStateFlow<AMCServerConnection?>(null)
     val connectedServer: StateFlow<AMCServerConnection?> = _connectedServer.asStateFlow()
+
+    // Track the current MQTT connection state and expose it as a state flow
+    private val _connectionState = MutableStateFlow(MQTTConnectionState.DISCONNECTED)
+    val connectionState: StateFlow<MQTTConnectionState> = _connectionState.asStateFlow()
+
 
     // Track active subscriptions for the current server
     // Any change to the subscription database will trigger a new query and update this variable
@@ -112,7 +119,21 @@ class AMCRepository(
     suspend fun connect(
         connection: AMCServerConnection
     ): Result<Unit> = withContext(Dispatchers.IO) {
+        // Prevent overlapping connection attempts if already connected or reconnecting
+        if (_connectionState.value == MQTTConnectionState.CONNECTED ||
+            _connectionState.value == MQTTConnectionState.RECONNECTING) {
+            Log.d(tag, "Already connected or reconnecting to a server. Ignoring connect request.")
+            return@withContext Result.success(Unit)
+        }
+
         try {
+            // Clean up old client (if it exists) to prevent errors from "zombie" clients
+            // that failed to disconnect cleanly and could potentially try to reconnect.
+            closeClient()
+
+            // Update connection state
+            _connectionState.value = MQTTConnectionState.CONNECTING
+
             // Build server address
             val rawAddress = connection.serverAddress
             val prefix = if (rawAddress.contains("://")) "" else "tcp://"
@@ -127,8 +148,9 @@ class AMCRepository(
 
             // Translate connection to MqttConnectOptions
             val options = MqttConnectOptions().apply {
-                mqttVersion = MqttConnectOptions.MQTT_VERSION_3_1_1
                 isAutomaticReconnect = true
+                connectionTimeout = 10
+                mqttVersion = MqttConnectOptions.MQTT_VERSION_3_1_1
                 isCleanSession = connection.cleanSession
                 keepAliveInterval = connection.keepAlive
 
@@ -150,9 +172,6 @@ class AMCRepository(
             // Generate client ID if none is provided
             val clientId = connection.clientID.ifBlank { MqttClient.generateClientId() }
 
-            // Clean up old client if it exists
-            closeClient()
-
             // Create MQTT client
             mqttClient = MqttClient(
                 address,
@@ -162,15 +181,47 @@ class AMCRepository(
 
             // Set callback listener for asynchronous events
             mqttClient?.setCallback(object: MqttCallbackExtended {
+                /**
+                 * Called when the connection to the server is complete.
+                 *
+                 * This includes automatic reconnect attempts.
+                 */
                 override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                    // Intentionally empty
+                    Log.d(tag, "Connection complete. Reconnect: $reconnect, Server URI: $serverURI")
+
+                    // Resubscribe to all subscriptions on reconnect if clean session is true,
+                    // since the server will have reset the subscriptions.
+                    if( reconnect && connection.cleanSession ) {
+                        repositoryScope.launch {
+                            try {
+                                val subscriptions = subscriptionDao
+                                    .getSubscriptionsForServer(connection.id)
+                                    .first()
+                                subscriptions.forEach {
+                                    Log.d(tag, "Auto-resubscribing to: ${it.topic}")
+                                    mqttClient?.subscribe(it.topic, it.qos)
+                                }
+                            } catch (e: Exception) {
+                                Log.e(tag, "Failed to auto-resubscribe after reconnect", e)
+                            }
+                        }
+                    }
+                    _connectionState.value = MQTTConnectionState.CONNECTED
                 }
 
+                /**
+                 * Called when the connection to the server is lost unexpectedly.
+                 */
                 override fun connectionLost(cause: Throwable?) {
                     Log.d(tag, "Connection lost", cause)
-                    // TODO: Handle connection loss, show error message
+
+                    // Update the connection state (automatic reconnect is enabled!)
+                    _connectionState.value = MQTTConnectionState.RECONNECTING
                 }
 
+                /**
+                 * Called when a message is received from the server.
+                 */
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
                     Log.d(tag, "Message arrived: $message")
                     // Translate to internal message format
@@ -187,6 +238,9 @@ class AMCRepository(
                     }
                 }
 
+                /**
+                 * Called when the delivery of a message is complete.
+                 */
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
                     // Intentionally empty
                 }
@@ -234,11 +288,17 @@ class AMCRepository(
     ): Result<Unit> = withContext(Dispatchers.IO + NonCancellable) {
         val client = mqttClient
         if (client == null) {
-            // Can't disconnect, return success since desired disconnect state is achieved.
+            // Even if client is null, ensure the UI state is reset to DISCONNECTED
+            _connectionState.value = MQTTConnectionState.DISCONNECTED
+            _connectedServer.value = null
+
+            // Return success since desired state (no active connections) is achieved.
             return@withContext Result.success(Unit)
         }
 
         try {
+            _connectionState.value = MQTTConnectionState.DISCONNECTING
+
             if(client.isConnected) {
                 // Disconnect from the server
                 if(quiesceTime == null){
@@ -385,7 +445,7 @@ class AMCRepository(
     }
 
     /**
-     * Close the MQTT client and reset the internal state.
+     * Close the MQTT client and reset the client state.
      *
      * This function should be called when the client is no longer needed, to avoid
      * memory leaks, and to allow new connections to be established.
@@ -393,21 +453,35 @@ class AMCRepository(
      * @return A [Result] object indicating the success or failure of the operation.
      */
     private fun closeClient(): Result<Unit> {
-        mqttClient?.let { existingClient ->
-            try {
-                // Disconnect if still connected and close the client
-                if (existingClient.isConnected) { existingClient.disconnectForcibly() }
-                existingClient.setCallback(null)
-                existingClient.close()
+        val existingClient = mqttClient ?: return Result.success(Unit)
+        Log.d(tag, "Closing client")
 
-                // Reset internal state
-                _connectedServer.value = null
-                mqttClient = null
-            } catch (e: Exception) {
-                Log.e(tag, "Error cleaning up client", e)
-                return Result.failure(e)
+        return try {
+            // NOTE: Do NOT call `setCallback(null)` after `close()`, otherwise the app crashes!
+            existingClient.setCallback(null)
+
+            // Disconnect if still connected
+            if (existingClient.isConnected) {
+                try {
+                    existingClient.disconnectForcibly(500,500)
+                } catch (e: Exception) {
+                    Log.e(tag, "Forcible disconnect failed (likely already disconnected): ${e.message}")
+                }
             }
+
+            // Close the client and release all resources
+            existingClient.close()
+
+            Log.d(tag, "Client closed successfully")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(tag, "Error cleaning up client", e)
+            Result.failure(e)
+        } finally {
+            // Reset the client state
+            mqttClient = null
+            _connectedServer.value = null
+            _connectionState.value = MQTTConnectionState.DISCONNECTED
         }
-        return Result.success(Unit)
     }
 }

@@ -5,19 +5,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidmqttclient.data.AMCLogEntry
-import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.AMCMessage
 import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.AMCSubscription
+import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.LogEntryType
 import com.example.androidmqttclient.data.repository.AMCRepository
 import com.example.androidmqttclient.data.topicMatchesPattern
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.collections.plus
 
 /**
  * ViewModel for the MQTT client.
@@ -73,12 +73,14 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      */
     private fun observeConnectionState() {
         viewModelScope.launch {
-            amcRepository.connectedServer.collect { connection ->
+            combine(amcRepository.connectionState, amcRepository.connectedServer) { state, connection ->
+                Pair(state, connection)
+            }.collect { (state, connection) ->
                 // Update the UI State
                 _uiState.update { currentState ->
                     currentState.copy(
                         connectedServer = connection,
-                        isConnected = (connection != null)
+                        connectionState = state,
                     )
                 }
             }
@@ -195,9 +197,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      * @param connection The server to connect to.
      */
     fun connect(connection: AMCServerConnection) {
-        // Update UI state to indicate that connection is in progress
-        _uiState.update { it.copy(isConnecting = true) }
-
         // Connect to server inside coroutine to prevent blocking the Main thread
         viewModelScope.launch {
             Log.d(tag, "Connecting to ${connection.connectionName}")
@@ -207,13 +206,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 Log.d(tag, "Successfully connected to ${connection.connectionName}")
                 showInfoMessage("Connected to ${connection.connectionName}")
 
-                // Update UI state
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        isConnecting = false
-                    )
-                }
-
                 // Log connect
                 addLogEntry(AMCLogEntry(
                     timestamp = System.currentTimeMillis(),
@@ -221,7 +213,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                     message = "Connected to server: ${connection.connectionName}"
                 ))
             }.onFailure { error ->
-                _uiState.update { it.copy(isConnecting = false) }
                 Log.e(tag, "Error connecting to ${connection.connectionName}", error)
                 showErrorMessage("Could not connect to ${connection.connectionName}: ${error.message}")
             }
@@ -230,7 +221,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
 
     /**
      * Disconnect from the current server.
-     *
      */
     fun disconnect() {
         // Get current server and name
