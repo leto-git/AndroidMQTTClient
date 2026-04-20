@@ -11,6 +11,7 @@ data class AMCUiState(
 
     // Subscription related properties
     val activeSubscriptions: List<AMCSubscription> = listOf(),
+
     val receivedMessagesLimit: Int = 200,
     val numReceivedMessages: Int = 0,
     val receivedMessages: List<AMCMessage> = listOf(),

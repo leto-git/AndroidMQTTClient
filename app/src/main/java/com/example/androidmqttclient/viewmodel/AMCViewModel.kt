@@ -40,6 +40,8 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     init {
         // Observe server connections from the database
         observeServerConnections()
+        // Observe connection state from the repository
+        observeConnectionState()
         // Observe active subscriptions
         observeActiveSubscriptions()
         // Observe incoming messages from the MQTT client
@@ -58,6 +60,26 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 // Update the UI State
                 _uiState.update { currentState ->
                     currentState.copy(serverConnections = connections)
+                }
+            }
+        }
+    }
+
+    /**
+     * Observe the current connection state.
+     *
+     * This function collects the current connection state from the repository and updates
+     * the UI state accordingly.
+     */
+    private fun observeConnectionState() {
+        viewModelScope.launch {
+            amcRepository.connectedServer.collect { connection ->
+                // Update the UI State
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        connectedServer = connection,
+                        isConnected = (connection != null)
+                    )
                 }
             }
         }
@@ -188,9 +210,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 // Update UI state
                 _uiState.update { currentState ->
                     currentState.copy(
-                        isConnecting = false,
-                        isConnected = true,
-                        connectedServer = connection
+                        isConnecting = false
                     )
                 }
 
@@ -226,14 +246,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             result.onSuccess {
                 Log.d(tag, "Successfully disconnected from $connectionName")
                 showInfoMessage("Disconnected from $connectionName")
-
-                // Update UI state
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        isConnected = false,
-                        connectedServer = null
-                    )
-                }
 
                 // Clear received and published messages
                 clearReceivedMessages()

@@ -15,7 +15,9 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -46,27 +48,28 @@ class AMCRepository(
     val serverConnections: Flow<List<AMCServerConnection>> =
         serverConnectionDao.getAllServerConnections()
 
-    // Track the current server connection
-    private val _connectedServerId = MutableStateFlow<Int?>(null)
+    // Track the current server connection and expose it as a state flow
+    private val _connectedServer = MutableStateFlow<AMCServerConnection?>(null)
+    val connectedServer: StateFlow<AMCServerConnection?> = _connectedServer.asStateFlow()
 
-    // Flow for active subscriptions
+    // Track active subscriptions for the current server
     // Any change to the subscription database will trigger a new query and update this variable
     @OptIn(ExperimentalCoroutinesApi::class)
-    val activeSubscriptions: Flow<List<AMCSubscription>> = _connectedServerId.flatMapLatest { id ->
-        if (id == null) {
-            flowOf(emptyList())
-        } else {
-            subscriptionDao.getSubscriptionsForServer(id)
-        }
+    val activeSubscriptions: Flow<List<AMCSubscription>> =
+        _connectedServer.flatMapLatest { connection ->
+            if (connection == null) {
+                flowOf(emptyList())
+            } else {
+                subscriptionDao.getSubscriptionsForServer(connection.id)
+            }
     }
 
-    // Shared flow for incoming messages
+    // Track incoming messages and expose them as a shared flow
     private val _incomingMessages = MutableSharedFlow<AMCMessage>(
         replay = 0,
         extraBufferCapacity = 32,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
-    // Expose shared flow as read-only property
     val incomingMessages = _incomingMessages.asSharedFlow()
 
     // Tag for logging
@@ -148,17 +151,7 @@ class AMCRepository(
             val clientId = connection.clientID.ifBlank { MqttClient.generateClientId() }
 
             // Clean up old client if it exists
-            mqttClient?.let { existingClient ->
-                try {
-                    if (existingClient.isConnected) {
-                        existingClient.disconnectForcibly()
-                    }
-                    existingClient.close()
-                    mqttClient = null
-                } catch (e: Exception) {
-                    Log.e(tag, "Error cleaning up old client before re-connect", e)
-                }
-            }
+            closeClient()
 
             // Create MQTT client
             mqttClient = MqttClient(
@@ -203,7 +196,7 @@ class AMCRepository(
             Log.d(tag, "Connecting to $address")
             mqttClient?.connect(options)
 
-            _connectedServerId.value = connection.id
+            _connectedServer.value = connection
 
             // Clear subscriptions from the database, if clean session is true
             // If the client gracefully disconnected this operation is not necessary, but
@@ -215,10 +208,8 @@ class AMCRepository(
             Log.d(tag, "Connected to $address")
             Result.success(Unit)
         } catch (e: Exception) {
-            // Reset state
-            _connectedServerId.value = null
-            mqttClient?.setCallback(null)
-            mqttClient = null
+            // Close client and reset state
+            closeClient()
 
             Log.e(tag, "Error connecting to server ${connection.connectionName}", e)
             Result.failure(e)
@@ -262,27 +253,16 @@ class AMCRepository(
                 }
             }
 
-            // Reset connected ID, clear callback listener, close the client and set it to null
-            _connectedServerId.value = null
-            client.setCallback(null)
-            try {
-                client.close()
-            } catch (e: Exception) {
-                Log.e(tag, "Error closing client", e)
-            }
-            mqttClient = null
+            closeClient()
+
             Log.d(tag, "Disconnected")
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(tag, "Error disconnecting", e)
 
             // In case of error also reset the client state
-            _connectedServerId.value = null
-            mqttClient?.let {
-                it.setCallback(null)
-                try { it.close() } catch (_: Exception) { /* ignore */ }
-            }
-            mqttClient = null
+            closeClient()
+
             Result.failure(e)
         }
     }
@@ -402,5 +382,32 @@ class AMCRepository(
                 IllegalStateException("MQTT Client not initialized or disconnected")
             )
         }
+    }
+
+    /**
+     * Close the MQTT client and reset the internal state.
+     *
+     * This function should be called when the client is no longer needed, to avoid
+     * memory leaks, and to allow new connections to be established.
+     *
+     * @return A [Result] object indicating the success or failure of the operation.
+     */
+    private fun closeClient(): Result<Unit> {
+        mqttClient?.let { existingClient ->
+            try {
+                // Disconnect if still connected and close the client
+                if (existingClient.isConnected) { existingClient.disconnectForcibly() }
+                existingClient.setCallback(null)
+                existingClient.close()
+
+                // Reset internal state
+                _connectedServer.value = null
+                mqttClient = null
+            } catch (e: Exception) {
+                Log.e(tag, "Error cleaning up client", e)
+                return Result.failure(e)
+            }
+        }
+        return Result.success(Unit)
     }
 }
