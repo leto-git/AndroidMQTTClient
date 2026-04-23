@@ -46,7 +46,7 @@ class AMCRepository(
     // Coroutine scope for repository operations
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    // Flow for server connections
+    // Track the list of server connections and expose it as a flow
     val serverConnections: Flow<List<AMCServerConnection>> =
         serverConnectionDao.getAllServerConnections()
 
@@ -135,121 +135,24 @@ class AMCRepository(
             _connectionState.value = MQTTConnectionState.CONNECTING
 
             // Build server address
-            val rawAddress = connection.serverAddress
-            val prefix = if (rawAddress.contains("://")) "" else "tcp://"
-            val fullBaseAddress = "$prefix$rawAddress"
-
-            // Only add port if the address doesn't already have one
-            val address = if (fullBaseAddress.substringAfter("://").contains(":")) {
-                fullBaseAddress
-            } else {
-                "$fullBaseAddress:${connection.serverPort}"
-            }
-
+            val address = buildAddress(connection)
             // Translate connection to MqttConnectOptions
-            val options = MqttConnectOptions().apply {
-                isAutomaticReconnect = true
-                connectionTimeout = 10
-                mqttVersion = MqttConnectOptions.MQTT_VERSION_3_1_1
-                isCleanSession = connection.cleanSession
-                keepAliveInterval = connection.keepAlive
-
-                if(connection.username.isNotBlank()) {
-                    userName = connection.username
-                }
-                if(connection.password.isNotBlank()) {
-                    password = connection.password.toCharArray()
-                }
-
-                if(connection.willTopic.isNotBlank()) {
-                    setWill(
-                        connection.willTopic,
-                        connection.willMessage.toByteArray(),
-                        connection.willQos,
-                        connection.willRetain)
-                }
-            }
+            val options = translateToPahoConnectOptions(connection)
             // Generate client ID if none is provided
             val clientId = connection.clientID.ifBlank { MqttClient.generateClientId() }
 
             // Create MQTT client
-            mqttClient = MqttClient(
-                address,
-                clientId,
-                MemoryPersistence()
-            )
+            mqttClient = MqttClient(address, clientId, MemoryPersistence())
 
             // Set callback listener for asynchronous events
-            mqttClient?.setCallback(object: MqttCallbackExtended {
-                /**
-                 * Called when the connection to the server is complete.
-                 *
-                 * This includes automatic reconnect attempts.
-                 */
-                override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                    Log.d(tag, "Connection complete. Reconnect: $reconnect, Server URI: $serverURI")
+            setupCallbacks(connection)
 
-                    // Resubscribe to all subscriptions on reconnect if clean session is true,
-                    // since the server will have reset the subscriptions.
-                    if( reconnect && connection.cleanSession ) {
-                        repositoryScope.launch {
-                            try {
-                                val subscriptions = subscriptionDao
-                                    .getSubscriptionsForServer(connection.id)
-                                    .first()
-                                subscriptions.forEach {
-                                    Log.d(tag, "Auto-resubscribing to: ${it.topic}")
-                                    mqttClient?.subscribe(it.topic, it.qos)
-                                }
-                            } catch (e: Exception) {
-                                Log.e(tag, "Failed to auto-resubscribe after reconnect", e)
-                            }
-                        }
-                    }
-                    _connectionState.value = MQTTConnectionState.CONNECTED
-                }
-
-                /**
-                 * Called when the connection to the server is lost unexpectedly.
-                 */
-                override fun connectionLost(cause: Throwable?) {
-                    Log.d(tag, "Connection lost", cause)
-
-                    // Update the connection state (automatic reconnect is enabled!)
-                    _connectionState.value = MQTTConnectionState.RECONNECTING
-                }
-
-                /**
-                 * Called when a message is received from the server.
-                 */
-                override fun messageArrived(topic: String?, message: MqttMessage?) {
-                    Log.d(tag, "Message arrived: $message")
-                    // Translate to internal message format
-                    val mqttMessage = AMCMessage(
-                        topic = topic ?: "",
-                        payload = message?.toString() ?: "",
-                        qos = message?.qos ?: 0,
-                        retain = message?.isRetained ?: false,
-                        timestamp = System.currentTimeMillis()
-                    )
-                    // Emit message to shared flow, which will be collected by the ViewModel
-                    repositoryScope.launch {
-                        _incomingMessages.emit(mqttMessage)
-                    }
-                }
-
-                /**
-                 * Called when the delivery of a message is complete.
-                 */
-                override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                    // Intentionally empty
-                }
-            })
+            Log.d(tag, "Connecting to $address")
 
             // Connect to server
-            Log.d(tag, "Connecting to $address")
             mqttClient?.connect(options)
 
+            // NOTE: [_connectionState] will be set to CONNECTED in the callback listener
             _connectedServer.value = connection
 
             // Clear subscriptions from the database, if clean session is true
@@ -425,6 +328,146 @@ class AMCRepository(
             },
             onFailure = { Result.failure(it) }
         )
+    }
+
+    /**
+     * Build an address string for the server connection.
+     *
+     * @param connection The connection object containing the server information.
+     *
+     * @return A string representing the server address.
+     */
+    private fun buildAddress(connection: AMCServerConnection): String {
+        val rawAddress = connection.serverAddress
+        // Default to TCP if no protocol is provided
+        val prefix = if (rawAddress.contains("://")) {
+            ""
+        } else {
+            "tcp://"
+        }
+        // Only add port if the address doesn't already have one
+        val suffix = if (rawAddress.substringAfter("://").contains(":")) {
+            ""
+        } else {
+            ":${connection.serverPort}"
+        }
+
+        return "$prefix$rawAddress$suffix"
+    }
+
+    /**
+     * Translate an internal [AMCServerConnection] to a Paho [MqttConnectOptions].
+     *
+     * @param connection The internal server connection to translate.
+     * @param automaticReconnect Whether automatic reconnection should be enabled.
+     * @param connectionTimeoutSec The connection timeout in seconds.
+     * @param version The MQTT version to use.
+     *
+     * @return A [MqttConnectOptions] object containing the translated options.
+     */
+    private fun translateToPahoConnectOptions(
+        connection: AMCServerConnection,
+        automaticReconnect: Boolean = true,
+        connectionTimeoutSec: Int = 10,
+        version: Int = MqttConnectOptions.MQTT_VERSION_3_1_1
+    ): MqttConnectOptions {
+
+        return MqttConnectOptions().apply {
+            isAutomaticReconnect = automaticReconnect
+            connectionTimeout = connectionTimeoutSec
+            mqttVersion = version
+            isCleanSession = connection.cleanSession
+            keepAliveInterval = connection.keepAlive
+
+            if(connection.username.isNotBlank()) {
+                userName = connection.username
+            }
+            if(connection.password.isNotBlank()) {
+                password = connection.password.toCharArray()
+            }
+
+            if(connection.willTopic.isNotBlank()) {
+                setWill(
+                    connection.willTopic,
+                    connection.willMessage.toByteArray(),
+                    connection.willQos,
+                    connection.willRetain)
+            }
+        }
+    }
+
+    /**
+     * Set up callbacks for the MQTT client used for asynchronous events.
+     *
+     * @param connection The connection object containing the server information.
+     */
+    private fun setupCallbacks(connection: AMCServerConnection) {
+
+        mqttClient?.setCallback(object: MqttCallbackExtended {
+            /**
+             * Called when the connection to the server is complete.
+             *
+             * This includes automatic reconnect attempts.
+             */
+            override fun connectComplete(reconnect: Boolean, serverURI: String?) {
+                Log.d(tag, "Connection complete. Reconnect: $reconnect, Server URI: $serverURI")
+
+                // Resubscribe to all subscriptions on reconnect if clean session is true,
+                // since the server will have reset the subscriptions.
+                if( reconnect && connection.cleanSession ) {
+                    repositoryScope.launch {
+                        try {
+                            val subscriptions = subscriptionDao
+                                .getSubscriptionsForServer(connection.id)
+                                .first()
+                            subscriptions.forEach {
+                                Log.d(tag, "Auto-resubscribing to: ${it.topic}")
+                                mqttClient?.subscribe(it.topic, it.qos)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(tag, "Failed to auto-resubscribe after reconnect", e)
+                        }
+                    }
+                }
+                _connectionState.value = MQTTConnectionState.CONNECTED
+            }
+
+            /**
+             * Called when the connection to the server is lost unexpectedly.
+             */
+            override fun connectionLost(cause: Throwable?) {
+                Log.d(tag, "Connection lost", cause)
+
+                // Update the connection state (automatic reconnect is enabled!)
+                _connectionState.value = MQTTConnectionState.RECONNECTING
+            }
+
+            /**
+             * Called when a message is received from the server.
+             */
+            override fun messageArrived(topic: String?, message: MqttMessage?) {
+                Log.d(tag, "Message arrived: $message")
+                // Translate to internal message format
+                val mqttMessage = AMCMessage(
+                    topic = topic ?: "",
+                    payload = message?.toString() ?: "",
+                    qos = message?.qos ?: 0,
+                    retain = message?.isRetained ?: false,
+                    timestamp = System.currentTimeMillis()
+                )
+                // Emit message to shared flow, which will be collected by the ViewModel
+                repositoryScope.launch {
+                    _incomingMessages.emit(mqttMessage)
+                }
+            }
+
+            /**
+             * Called when the delivery of a message is complete.
+             */
+            override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                // Intentionally empty
+            }
+        })
     }
 
     /**
