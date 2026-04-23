@@ -49,6 +49,7 @@ fun ServerConnectionForm(
     var serverName by remember { mutableStateOf(existingConnection?.connectionName ?: "") }
     var serverAddress by remember { mutableStateOf(existingConnection?.serverAddress ?: "") }
     var serverPort by remember { mutableIntStateOf(existingConnection?.serverPort ?: 1883) }
+    var useSSL by remember { mutableStateOf(existingConnection?.useSSL ?: false) }
     var clientID by remember {
         mutableStateOf(existingConnection?.clientID ?:
     "AMC_${System.currentTimeMillis().toString().takeLast(6)}")
@@ -75,6 +76,7 @@ fun ServerConnectionForm(
             mqttVersion = MQTTVersion.V3_1_1,
             serverAddress = serverAddress,
             serverPort = serverPort,
+            useSSL = useSSL,
             clientID = clientID,
             username = username,
             password = password,
@@ -121,12 +123,17 @@ fun ServerConnectionForm(
             // Server connection details
             ServerConnectionDetails(
                 serverName, serverAddress, serverPort,
-                clientID, username, password, keepAlive, cleanSession,
+                useSSL,clientID, username, password, keepAlive, cleanSession,
                 willQos, willRetain, willTopic, willMessage,
                 editingEnabled = editingEnabled,
                 onServerNameChange = { serverName = it },
                 onServerAddressChange = { serverAddress = it },
                 onServerPortChange = { serverPort = it },
+                onUseSSLChange = {
+                    useSSL = it
+                    if( it && serverPort == 1883 ) serverPort = 8883
+                    else if( !it && serverPort == 8883 ) serverPort = 1883
+                },
                 onClientIDChange = { clientID = it },
                 onUsernameChange = { username = it },
                 onPasswordChange = { password = it },

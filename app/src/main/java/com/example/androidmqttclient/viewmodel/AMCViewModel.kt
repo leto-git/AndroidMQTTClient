@@ -214,7 +214,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 ))
             }.onFailure { error ->
                 Log.e(tag, "Error connecting to ${connection.connectionName}", error)
-                showErrorMessage("Could not connect to ${connection.connectionName}: ${error.message}")
+                showErrorMessage("Could not connect to ${connection.connectionName}", error)
             }
         }
     }
@@ -249,7 +249,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 ))
             }.onFailure { error ->
                 Log.e(tag, "Error disconnecting from server", error)
-                showErrorMessage("Could not disconnect from $connectionName: ${error.message}")
+                showErrorMessage("Could not disconnect from $connectionName", error)
             }
         }
     }
@@ -290,7 +290,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             }.onFailure { error ->
                 _uiState.update { it.copy(isSubscribing = false) }
                 Log.e(tag, "Error subscribing to ${subscription.topic}", error)
-                showErrorMessage("Could not subscribe to ${subscription.topic}: ${error.message}")
+                showErrorMessage("Could not subscribe to ${subscription.topic}", error)
 
             }
         }
@@ -330,7 +330,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             }.onFailure { error ->
                 _uiState.update { it.copy(isUnsubscribing = false) }
                 Log.e(tag, "Error unsubscribing from ${subscription.topic}", error)
-                showErrorMessage("Could not unsubscribe from ${subscription.topic}: ${error.message}")
+                showErrorMessage("Could not unsubscribe from ${subscription.topic}", error)
             }
         }
     }
@@ -379,7 +379,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             }.onFailure { error ->
                 _uiState.update { it.copy(isPublishing = false) }
                 Log.e(tag, "Error publishing to ${message.topic}", error)
-                showErrorMessage("Could not publish to ${message.topic}: ${error.message}")
+                showErrorMessage("Could not publish to ${message.topic}", error)
             }
         }
     }
@@ -433,9 +433,18 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
 
     /**
      * Updates the error message in the UI state.
+     *
+     * @param message The error message to display.
+     * @param error The error that caused the message.
      */
-    fun showErrorMessage(message: String?) {
-        _uiState.update { it.copy(errorMessage = message) }
+    fun showErrorMessage(message: String, error: Throwable? = null) {
+        val errorMessage = if( error == null ) {
+            message
+        } else {
+            "$message: ${formatErrorMessage(error)}"
+        }
+
+        _uiState.update { it.copy(errorMessage = errorMessage) }
     }
 
     /**
@@ -509,5 +518,23 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
         )
         // Set the subscription color
         return if( bestMatch != null ) Color(bestMatch.color) else null
+    }
+
+    /**
+     * Format an error message for display in the UI.
+     *
+     * @param error The error to format.
+     *
+     * @return The formatted error message.
+     */
+    private fun formatErrorMessage(error: Throwable): String {
+        val baseMessage = error.message ?: "Unknown error"
+        val causeMessage = error.cause?.message
+
+        return if (causeMessage != null && causeMessage != baseMessage) {
+            "$baseMessage ($causeMessage)"
+        } else {
+            baseMessage
+        }
     }
 }

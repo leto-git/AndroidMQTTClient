@@ -120,8 +120,7 @@ class AMCRepository(
         connection: AMCServerConnection
     ): Result<Unit> = withContext(Dispatchers.IO) {
         // Prevent overlapping connection attempts if already connected or reconnecting
-        if (_connectionState.value == MQTTConnectionState.CONNECTED ||
-            _connectionState.value == MQTTConnectionState.RECONNECTING) {
+        if (_connectionState.value == MQTTConnectionState.CONNECTED) {
             Log.d(tag, "Already connected or reconnecting to a server. Ignoring connect request.")
             return@withContext Result.success(Unit)
         }
@@ -165,8 +164,10 @@ class AMCRepository(
             Log.d(tag, "Connected to $address")
             Result.success(Unit)
         } catch (e: Exception) {
-            // Close client and reset state
-            closeClient()
+            // Ensure client is closed even in case of error
+            withContext(NonCancellable) {
+                closeClient()
+            }
 
             Log.e(tag, "Error connecting to server ${connection.connectionName}", e)
             Result.failure(e)
@@ -221,11 +222,10 @@ class AMCRepository(
             Log.d(tag, "Disconnected")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(tag, "Error disconnecting", e)
-
             // In case of error also reset the client state
             closeClient()
 
+            Log.e(tag, "Error disconnecting", e)
             Result.failure(e)
         }
     }
@@ -339,12 +339,15 @@ class AMCRepository(
      */
     private fun buildAddress(connection: AMCServerConnection): String {
         val rawAddress = connection.serverAddress
-        // Default to TCP if no protocol is provided
+
+        // Determine default protocol if not provided
+        val protocol = if (connection.useSSL) "ssl://" else "tcp://"
         val prefix = if (rawAddress.contains("://")) {
             ""
         } else {
-            "tcp://"
+            protocol
         }
+
         // Only add port if the address doesn't already have one
         val suffix = if (rawAddress.substringAfter("://").contains(":")) {
             ""
@@ -379,13 +382,14 @@ class AMCRepository(
             isCleanSession = connection.cleanSession
             keepAliveInterval = connection.keepAlive
 
+            // Set username and password if provided
             if(connection.username.isNotBlank()) {
                 userName = connection.username
             }
             if(connection.password.isNotBlank()) {
                 password = connection.password.toCharArray()
             }
-
+            // Set will message if provided
             if(connection.willTopic.isNotBlank()) {
                 setWill(
                     connection.willTopic,

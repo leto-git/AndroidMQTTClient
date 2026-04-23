@@ -15,7 +15,7 @@ import androidx.room.RoomDatabase
         AMCServerConnection::class,
         AMCSubscription::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false)
 abstract class AMCDatabase : RoomDatabase() {
 

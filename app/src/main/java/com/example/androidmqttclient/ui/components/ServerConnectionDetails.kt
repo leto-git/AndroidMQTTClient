@@ -36,6 +36,7 @@ fun ServerConnectionDetails(
     serverName: String,
     serverAddress: String,
     serverPort: Int,
+    useSSL: Boolean,
     clientID: String,
     username: String,
     password: String,
@@ -51,6 +52,7 @@ fun ServerConnectionDetails(
     onServerNameChange: (String) -> Unit,
     onServerAddressChange: (String) -> Unit,
     onServerPortChange: (Int) -> Unit,
+    onUseSSLChange: (Boolean) -> Unit,
     onClientIDChange: (String) -> Unit,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
@@ -83,30 +85,41 @@ fun ServerConnectionDetails(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
-        // Server address and port input
+        // Server address (host) input
+        OutlinedTextField(
+            value = serverAddress,
+            onValueChange = onServerAddressChange,
+            label = { Text(stringResource(R.string.host)) },
+            prefix = if (!serverAddress.contains("://")) {
+                {
+                    Text(
+                        text = if (useSSL) "ssl://" else "tcp://",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    )
+                }
+            } else null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            enabled = editingEnabled,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Uri,
+                imeAction = ImeAction.Next,
+                capitalization = KeyboardCapitalization.None,
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Next) }
+            )
+        )
+        // Server port and SSL input
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Server address (host) input
-            OutlinedTextField(
-                value = serverAddress,
-                onValueChange = onServerAddressChange,
-                label = { Text(stringResource(R.string.host)) },
-                modifier = Modifier
-                    .weight(0.5f)
-                    .height(64.dp),
-                enabled = editingEnabled,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Uri,
-                    imeAction = ImeAction.Next,
-                    capitalization = KeyboardCapitalization.None,
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                )
-            )
             // Server port input
             OutlinedTextField(
                 value = if (serverPort == 0) "" else serverPort.toString(),
@@ -130,6 +143,24 @@ fun ServerConnectionDetails(
                     onNext = { focusManager.moveFocus(FocusDirection.Next) }
                 )
             )
+            // SSL checkbox and label
+            Row(
+                modifier = Modifier
+                    .weight(0.5f)
+                    .clickable { onUseSSLChange(!useSSL) },
+                horizontalArrangement = Arrangement.spacedBy(0.5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = useSSL,
+                    onCheckedChange = onUseSSLChange,
+                    enabled = editingEnabled,
+                )
+                Text(
+                    text = stringResource(R.string.SSL),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
         // Client ID
         OutlinedTextField(

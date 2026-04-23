@@ -24,6 +24,7 @@ data class AMCServerConnection(
     // Connection parameters
     val serverAddress: String = "",
     val serverPort: Int = 1883,
+    val useSSL: Boolean = false,
     val clientID: String = "AMC_" + System.currentTimeMillis().toString().takeLast(6),
     val username: String = "",
     val password: String = "",
