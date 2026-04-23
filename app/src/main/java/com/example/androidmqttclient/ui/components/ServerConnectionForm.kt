@@ -1,12 +1,16 @@
 package com.example.androidmqttclient.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -26,7 +30,7 @@ import com.example.androidmqttclient.data.MQTTVersion
  *
  * @param modifier The modifier to apply to this layout.
  * @param existingConnection The existing server connection to edit, or null if creating a new one.
- * @param actions The composable content for the buttons at the bottom of the form.
+ * @param actions The composable content for the buttons and actions.
  */
 @Composable
 fun ServerConnectionForm(
@@ -52,7 +56,7 @@ fun ServerConnectionForm(
     var username by remember { mutableStateOf(existingConnection?.username ?: "") }
     var password by remember { mutableStateOf(existingConnection?.password ?: "") }
     var keepAlive by remember { mutableIntStateOf(existingConnection?.keepAlive ?: 60) }
-    var cleanSession by remember { mutableStateOf(existingConnection?.cleanSession ?: false) }
+    var cleanSession by remember { mutableStateOf(existingConnection?.cleanSession ?: true) }
     var willQos by remember { mutableIntStateOf(existingConnection?.willQos ?: 0) }
     var willRetain by remember { mutableStateOf(existingConnection?.willRetain ?: false) }
     var willTopic by remember { mutableStateOf(existingConnection?.willTopic ?: "") }
@@ -83,13 +87,38 @@ fun ServerConnectionForm(
         )
     }
 
-    Scaffold(modifier = modifier) { padding ->
+    Scaffold(
+        modifier = modifier,
+        bottomBar = {
+            // Inject specific buttons from the parent composable
+            Surface(
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    actions(
+                        isValid,
+                        editingEnabled,
+                        { editingEnabled = !editingEnabled },
+                        currentConnectionData
+                    )
+                }
+            }
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
         ) {
+            // Server connection details
             ServerConnectionDetails(
                 serverName, serverAddress, serverPort,
                 clientID, username, password, keepAlive, cleanSession,
@@ -108,13 +137,8 @@ fun ServerConnectionForm(
                 onWillTopicChange = { willTopic = it },
                 onWillMessageChange = { willMessage = it }
             )
-
-            Spacer(Modifier.height(24.dp))
-
-            // Inject specific buttons from the parent composable
-            actions(isValid, editingEnabled, { editingEnabled = !editingEnabled }, currentConnectionData)
-
-            Spacer(Modifier.height(16.dp))
+            // Spacer
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

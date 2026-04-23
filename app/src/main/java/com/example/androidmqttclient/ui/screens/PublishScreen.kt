@@ -10,23 +10,36 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
@@ -45,29 +58,41 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 fun PublishScreen(
     modifier: Modifier = Modifier,
     uiState: AMCUiState,
+    onTopicChange: (String) -> Unit = {},
+    onQosChange: (Int) -> Unit = {},
+    onRetainToggle: () -> Unit = {},
+    onMessageChange: (String) -> Unit = {},
     onPublish: (AMCMessage) -> Unit = {},
+    onClearPublishedMessagesLog: () -> Unit = {}
 ) {
-    // State variables for input fields
-    var topic by remember { mutableStateOf("") }
-    var qos by remember { mutableIntStateOf(0) }
-    var retain by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("") }
+    // Local focus manager to jump to next field on enter
+    val focusManager = LocalFocusManager.current
+
+    var showClearLogDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // TODO: Enable jumping to next field on enter with `keyboardOptions.imeAction`
         // Topic input
         OutlinedTextField(
-            value = topic,
-            onValueChange = { topic = it },
+            value = uiState.publishTopic,
+            onValueChange = onTopicChange,
             label = { Text(stringResource(R.string.topic)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrectEnabled = false,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
         )
 
         // QoS and Retain
@@ -78,18 +103,30 @@ fun PublishScreen(
         ) {
             // QoS input
             OutlinedTextField(
-                value = if (qos < 0 || qos > 2) "" else qos.toString(),
+                value = if (uiState.publishQos < 0 || uiState.publishQos > 2) "" else uiState.publishQos.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 1 character (QoS max is 2)
-                    if (newValue.all { it.isDigit() } && newValue.length <= 1) {
-                        qos = newValue.toIntOrNull() ?: -1
+                    if (newValue.isEmpty()) {
+                        onQosChange(-1)
+                    } else if (newValue.all { it.isDigit() } && newValue.length <= 1) {
+                        val qos = newValue.toInt()
+                        if (qos in 0..2) {
+                            onQosChange(qos)
+                        }
                     }
                 },
                 label = { Text(stringResource(R.string.qos)) },
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                )
             )
 
             // Retain checkbox
@@ -97,13 +134,13 @@ fun PublishScreen(
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp)
-                    .clickable { retain = !retain },
+                    .clickable { onRetainToggle() },
                 horizontalArrangement = Arrangement.spacedBy(0.5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = retain,
-                    onCheckedChange = { retain = it }
+                    checked = uiState.publishRetain,
+                    onCheckedChange = { onRetainToggle() }
                 )
                 Text(
                     text =stringResource(R.string.retain),
@@ -114,12 +151,19 @@ fun PublishScreen(
 
         // Message input
         OutlinedTextField(
-            value = message,
-            onValueChange = { message = it },
+            value = uiState.publishMessage,
+            onValueChange = onMessageChange,
             label = { Text(stringResource(R.string.message)) },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(96.dp)
+                .height(96.dp),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() }
+            )
         )
 
         // Publish button
@@ -127,28 +171,49 @@ fun PublishScreen(
             onClick = {
                 // TODO: Check for valid input
                 // Publish and show confirmation snackBar
-                onPublish(AMCMessage(topic, message, qos, retain ))
-                // Reset message field
-                message = ""
+                onPublish(
+                    AMCMessage(
+                        uiState.publishTopic,
+                        uiState.publishMessage,
+                        uiState.publishQos,
+                        uiState.publishRetain
+                    )
+                )
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = dimensionResource(R.dimen.padding_small)),
-            enabled = topic.isNotBlank() && message.isNotBlank()
+            enabled = uiState.publishTopic.isNotBlank() && uiState.publishMessage.isNotBlank()
         ) {
             Text(stringResource(R.string.publish))
         }
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
 
-        // Messages headline
-        Text(
-            text = stringResource(R.string.published_messages),
-            style = MaterialTheme.typography.headlineSmall,
+        Row(
             modifier = Modifier
-                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small))
                 .fillMaxWidth()
-        )
+                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small)),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Messages headline
+            Text(
+                text = stringResource(R.string.published_messages),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f)
+            )
+            // Clear log button
+            IconButton(
+                onClick = { showClearLogDialog = true },
+                enabled = uiState.publishedMessages.isNotEmpty()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.clear_log)
+                )
+            }
+        }
 
         // List of published messages
         LazyColumn(
@@ -159,6 +224,31 @@ fun PublishScreen(
                 // Show message item
                 MessageItem(message)
             }
+        }
+
+        // Confirmation Dialog
+        if (showClearLogDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearLogDialog = false },
+                title = { Text(stringResource(R.string.clear_published_messages)) },
+                text = { Text(stringResource(R.string.are_you_sure_you_want_to_delete_the_published_messages)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClearLogDialog = false
+                            onClearPublishedMessagesLog()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.clear))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearLogDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
         }
     }
 }

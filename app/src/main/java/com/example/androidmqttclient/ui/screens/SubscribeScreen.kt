@@ -2,6 +2,7 @@ package com.example.androidmqttclient.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,18 +11,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -49,11 +55,13 @@ fun SubscribeScreen(
     modifier: Modifier = Modifier,
     uiState: AMCUiState,
     onAddSubscription: (AMCSubscription) -> Unit = {},
-    onUnsubscribe: (AMCSubscription) -> Unit = {}
+    onUnsubscribe: (AMCSubscription) -> Unit = {},
+    onClearReceivedMessagesLog: () -> Unit = {}
 ) {
     // State to track if the new subscription dialog should be shown
     var showNewSubscriptionDialog by remember { mutableStateOf(false) }
     var showSubscriptionsOverviewDialog by remember { mutableStateOf(false) }
+    var showClearLogDialog by remember { mutableStateOf(false) }
 
     // Column holding buttons and list of messages
     Column(
@@ -99,14 +107,30 @@ fun SubscribeScreen(
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
 
-        // Messages headline
-        Text(
-            text = stringResource(R.string.received_messages),
-            style = MaterialTheme.typography.headlineSmall,
+        Row(
             modifier = Modifier
-                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small))
                 .fillMaxWidth()
-        )
+                .padding(top = dimensionResource(R.dimen.padding_small),bottom = dimensionResource(R.dimen.padding_small)),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Messages headline
+            Text(
+                text = stringResource(R.string.received_messages),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f)
+            )
+            // Clear log button
+            IconButton(
+                onClick = { showClearLogDialog = true },
+                enabled = uiState.receivedMessages.isNotEmpty()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.clear_log)
+                )
+            }
+        }
 
         // List of received messages
         LazyColumn(
@@ -114,12 +138,8 @@ fun SubscribeScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(uiState.receivedMessages.asReversed()) { message ->
-                // Determine subscription color for message based on topic
-                val subscriptionColorLong = uiState.activeSubscriptions
-                    .find { it.topic == message.topic }?.color ?: 0xFF808080
-                val subscriptionColor = Color(subscriptionColorLong)
                 // Show message item
-                MessageItem(message, subscriptionColor)
+                MessageItem(message)
             }
         }
     }
@@ -154,6 +174,31 @@ fun SubscribeScreen(
             onDismiss = { showSubscriptionsOverviewDialog = false },
             onUnsubscribe = { subscription ->
                 onUnsubscribe(subscription)
+            }
+        )
+    }
+
+    // Confirmation Dialog
+    if (showClearLogDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearLogDialog = false },
+            title = { Text(stringResource(R.string.clear_received_messages)) },
+            text = { Text(stringResource(R.string.are_you_sure_you_want_to_delete_the_received_messages)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearLogDialog = false
+                        onClearReceivedMessagesLog()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.clear))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearLogDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }

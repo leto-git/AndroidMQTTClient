@@ -48,7 +48,7 @@ fun EditServerConnectionScreen(
         modifier = modifier,
         existingConnection = connection
     ) { isValid, isEditMode, onToggleEdit, currentData ->
-        // Cancel, and Edit/Save buttons
+        // Back, and Edit/Save buttons
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
                 onClick = onBack,
@@ -60,9 +60,11 @@ fun EditServerConnectionScreen(
             Button(
                 onClick = {
                     if( isEditMode ) {
+                        // Save changes and exit edit mode
                         onSave(currentData())
                         onToggleEdit()
                     } else {
+                        // Enter edit mode
                         onToggleEdit()
                     }
                 },

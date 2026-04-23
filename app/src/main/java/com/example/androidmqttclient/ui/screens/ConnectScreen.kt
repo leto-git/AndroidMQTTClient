@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,9 +23,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -43,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.AMCUiState
+import com.example.androidmqttclient.data.MQTTConnectionState
 import com.example.androidmqttclient.data.MQTTVersion
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 import com.example.androidmqttclient.ui.theme.ConnectionGreen
@@ -127,7 +122,6 @@ fun ConnectScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // TODO: Handle clicks when already connected to a server
                     items(uiState.serverConnections) { connection ->
                         val isCurrentConnection = uiState.connectedServer?.id == connection.id
 
@@ -152,7 +146,8 @@ fun ConnectScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Disconnect button if connected to a server
-            if( uiState.isConnected )
+            if( uiState.connectionState == MQTTConnectionState.CONNECTED ||
+                uiState.connectionState == MQTTConnectionState.RECONNECTING )
             {
                 ExtendedFloatingActionButton(
                     onClick = { showDisconnectDialog = true },
@@ -186,32 +181,6 @@ fun ConnectScreen(
                     Text(stringResource(R.string.add_server_screen))
                 }
             )
-        }
-
-        // Show loading indicator if connection is in progress
-        if( uiState.isConnecting ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f)), // Dim the background
-                contentAlignment = Alignment.Center
-            ) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(8.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Connecting...")
-                    }
-                }
-            }
         }
 
         // Delete connection confirmation dialog
@@ -281,14 +250,12 @@ fun ConnectionItem(
 ) {
     var showDropDownMenu by remember { mutableStateOf(false) }
     val color = if (isConnected) ConnectionGreen else ConnectionRed
-    val shape = MaterialTheme.shapes.medium
 
     Box {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-                .clip(shape)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = { showDropDownMenu = true }
@@ -403,7 +370,7 @@ fun ConnectScreenPreview() {
     AndroidMQTTClientTheme {
         ConnectScreen(
             uiState = AMCUiState(
-                isConnected = true,
+                connectionState = MQTTConnectionState.CONNECTED,
                 serverConnections = listOf(
                     AMCServerConnection(
                         mqttVersion = MQTTVersion.V3_1_1,

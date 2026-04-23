@@ -5,14 +5,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Enum class for representing the MQTT version.
- */
-enum class MQTTVersion {
-    V3_1_1,
-    V5
-}
-
-/**
  * Data class for representing a MQTT server connection stored in a Room database.
  */
 @Entity(
@@ -36,7 +28,7 @@ data class AMCServerConnection(
     val username: String = "",
     val password: String = "",
     val keepAlive: Int = 60,
-    val cleanSession: Boolean = false,
+    val cleanSession: Boolean = true,
     val willQos: Int = 0,
     val willRetain: Boolean = false,
     val willTopic: String = "",
