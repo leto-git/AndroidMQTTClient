@@ -453,14 +453,23 @@ class AMCRepository(
      * @return A [Result] object indicating the success or failure of the operation.
      */
     private fun closeClient(): Result<Unit> {
-        val existingClient = mqttClient ?: return Result.success(Unit)
+        val existingClient = mqttClient
+
+        // If client is null, make sure the internal state is "Disconnected" and return
+        if( existingClient == null ) {
+            _connectedServer.value = null
+            _connectionState.value = MQTTConnectionState.DISCONNECTED
+            return Result.success(Unit)
+        }
+
         Log.d(tag, "Closing client")
 
         return try {
             // NOTE: Do NOT call `setCallback(null)` after `close()`, otherwise the app crashes!
             existingClient.setCallback(null)
 
-            // Disconnect if still connected
+            // Disconnect forcibly if still connected. This will kill all existing
+            // background threads (like a reconnect attempt) and prevent "zombie clients".
             if (existingClient.isConnected) {
                 try {
                     existingClient.disconnectForcibly(500,500)
