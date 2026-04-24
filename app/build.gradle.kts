@@ -77,6 +77,10 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     // KSP support for Room
     ksp("androidx.room:room-compiler:$roomVersion")
+    // SQLCipher for encrypted storage
+    implementation(libs.net.zetetic.sqlcipher)
+    // Sqlite ktx
+    implementation(libs.androidx.sqlite)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
