@@ -95,7 +95,7 @@ fun ServerConnectionDetails(
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next
+                imeAction = ImeAction.Next,
             ),
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -149,7 +149,8 @@ fun ServerConnectionDetails(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.Next
+                        imeAction = ImeAction.Next,
+                        capitalization = KeyboardCapitalization.None,
                     ),
                     keyboardActions = KeyboardActions(
                         onNext = { focusManager.moveFocus(FocusDirection.Next) }
@@ -379,48 +380,42 @@ fun ServerConnectionDetails(
                 )
             }
         }
-        // Last will topic and message
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Last will topic input
-            OutlinedTextField(
-                value = willTopic,
-                onValueChange = onWillTopicChange,
-                label = { Text(stringResource(R.string.last_will_topic)) },
-                modifier = Modifier
-                    .weight(0.5f)
-                    .height(96.dp),
-                enabled = editingEnabled,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                )
+        // Last will topic input
+        OutlinedTextField(
+            value = willTopic,
+            onValueChange = onWillTopicChange,
+            label = { Text(stringResource(R.string.last_will_topic)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            enabled = editingEnabled,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrectEnabled = false,
+                keyboardType = KeyboardType.Uri,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
-            // Last will message input
-            OutlinedTextField(
-                value = willMessage,
-                onValueChange = onWillMessageChange,
-                label = { Text(stringResource(R.string.last_will_message)) },
-                modifier = Modifier
-                    .weight(0.5f)
-                    .height(96.dp),
-                enabled = editingEnabled,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { focusManager.clearFocus() }
-                )
+        )
+        // Last will message input
+        OutlinedTextField(
+            value = willMessage,
+            onValueChange = onWillMessageChange,
+            label = { Text(stringResource(R.string.last_will_message)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(96.dp),
+            enabled = editingEnabled,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() }
             )
-        }
+        )
     }
 }
 

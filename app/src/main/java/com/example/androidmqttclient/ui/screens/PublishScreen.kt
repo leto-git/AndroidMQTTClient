@@ -87,7 +87,7 @@ fun PublishScreen(
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
                 autoCorrectEnabled = false,
-                keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Uri,
                 imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(
@@ -169,6 +169,9 @@ fun PublishScreen(
         // Publish button
         Button(
             onClick = {
+                // Close keyboard
+                focusManager.clearFocus()
+
                 // TODO: Check for valid input
                 // Publish and show confirmation snackBar
                 onPublish(
