@@ -60,9 +60,10 @@ fun EditServerConnectionScreen(
             Button(
                 onClick = {
                     if( isEditMode ) {
-                        // Save changes and exit edit mode
+                        // Save changes, exit edit mode and return to main screen
                         onSave(currentData())
                         onToggleEdit()
+                        onBack()
                     } else {
                         // Enter edit mode
                         onToggleEdit()
