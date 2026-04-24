@@ -22,6 +22,10 @@ import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.MQTTVersion
 import com.example.androidmqttclient.data.TransportProtocol
+import com.example.androidmqttclient.data.isValidClientId
+import com.example.androidmqttclient.data.isValidForPublishing
+import com.example.androidmqttclient.data.isValidServerAddress
+import com.example.androidmqttclient.data.isValidWebSocketPath
 
 /**
  * Composable function for displaying the server connection form.
@@ -61,7 +65,7 @@ fun ServerConnectionForm(
     var serverAddress by remember {mutableStateOf(existingConnection?.serverAddress ?: "") }
     var webSocketPath by remember { mutableStateOf(existingConnection?.webSocketPath ?: "/mqtt") }
     var serverPort by remember { mutableIntStateOf(existingConnection?.serverPort ?: 1883) }
-    var clientID by remember {
+    var clientId by remember {
         mutableStateOf(existingConnection?.clientID ?:
     "AMC_${System.currentTimeMillis().toString().takeLast(6)}")
     }
@@ -74,11 +78,21 @@ fun ServerConnectionForm(
     var willTopic by remember { mutableStateOf(existingConnection?.willTopic ?: "") }
     var willMessage by remember { mutableStateOf(existingConnection?.willMessage ?: "") }
 
-    val isValid =
-        serverName.isNotBlank() &&
-        serverAddress.isNotBlank() &&
-        serverPort > 0 &&
-        clientID.isNotBlank()
+    val isHostValid = remember(serverAddress) { isValidServerAddress(serverAddress) }
+    val isWebSockethPathValid = remember(webSocketPath) { isValidWebSocketPath(webSocketPath) }
+    val isPortValid = remember(serverPort) { serverPort > 0 && serverPort < 65536 }
+    val isClientIdValid = remember(clientId) { isValidClientId(clientId) }
+    val isLastWillQosValid = remember(willQos) { willQos >= 0 && willQos <= 2 }
+    val isLastWillTopicValid = remember(willTopic) { isValidForPublishing(willTopic) }
+
+    val isWillValid = willTopic.isEmpty() || isLastWillTopicValid
+
+    val isValid = isHostValid &&
+            isWebSockethPathValid &&
+            isPortValid &&
+            isClientIdValid &&
+            isLastWillQosValid &&
+            isWillValid
 
     val currentConnectionData = {
         AMCServerConnection(
@@ -91,7 +105,7 @@ fun ServerConnectionForm(
             webSocketPath =
                 if (protocol == TransportProtocol.WS || protocol == TransportProtocol.WSS) webSocketPath
                 else "",
-            clientID = clientID,
+            clientID = clientId,
             username = username,
             password = password,
             keepAlive = keepAlive,
@@ -137,24 +151,29 @@ fun ServerConnectionForm(
             // Server connection details
             ServerConnectionDetails(
                 serverName, serverAddress, webSocketPath,serverPort, protocol,
-                clientID, username, password, keepAlive, cleanSession,
+                clientId, username, password, keepAlive, cleanSession,
                 willQos, willRetain, willTopic, willMessage,
+                isHostValid, isWebSockethPathValid, isPortValid, isClientIdValid,
+                isLastWillQosValid, isLastWillTopicValid,
                 editingEnabled = editingEnabled,
                 onServerNameChange = { serverName = it },
                 onServerAddressChange = { serverAddress = it },
                 onWebsocketPathChange = { webSocketPath = it },
                 onServerPortChange = { serverPort = it },
                 onProtocolChange = { newProtocol ->
-                    // Get all default ports from the enum to avoid magic numbers
-                    val knownDefaultPorts = TransportProtocol.entries.map { it.defaultPort }
-
                     // If the user hasn't changed the port to a custom one, update it automatically
+                    val knownDefaultPorts = TransportProtocol.entries.map { it.defaultPort }
                     if (serverPort in knownDefaultPorts || serverPort == 0) {
                         serverPort = newProtocol.defaultPort
                     }
+                    // Default back to "/mqtt" if current path is empty
+                    if( webSocketPath == "" &&
+                        (newProtocol == TransportProtocol.WS ||newProtocol == TransportProtocol.WSS) ) {
+                        webSocketPath = "/mqtt"
+                    }
                     protocol = newProtocol
                 },
-                onClientIDChange = { clientID = it },
+                onClientIDChange = { clientId = it },
                 onUsernameChange = { username = it },
                 onPasswordChange = { password = it },
                 onKeepAliveChange = { keepAlive = it },

@@ -9,11 +9,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -32,6 +37,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
@@ -49,7 +56,7 @@ fun ServerConnectionDetails(
     webSocketPath: String,
     serverPort: Int,
     protocol: TransportProtocol,
-    clientID: String,
+    clientId: String,
     username: String,
     password: String,
     keepAlive: Int,
@@ -58,6 +65,13 @@ fun ServerConnectionDetails(
     willRetain: Boolean,
     willTopic: String,
     willMessage: String,
+
+    isHostValid: Boolean,
+    isWebSockethPathValid: Boolean,
+    isPortValid: Boolean,
+    isClientIdValid: Boolean,
+    isLastWillQosValid: Boolean,
+    isLastWillTopicValid: Boolean,
 
     editingEnabled: Boolean,
 
@@ -80,6 +94,8 @@ fun ServerConnectionDetails(
     val focusManager = LocalFocusManager.current
 
     var expanded by remember { mutableStateOf(false) }
+
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Server name input
@@ -111,7 +127,6 @@ fun ServerConnectionDetails(
                 value = serverAddress,
                 onValueChange = onServerAddressChange,
                 label = { Text(stringResource(R.string.host) + "*") },
-                isError = serverAddress.isBlank(),
                 prefix = if (!serverAddress.contains("://")) {
                     {
                         Text(
@@ -127,6 +142,7 @@ fun ServerConnectionDetails(
                     .height(64.dp),
                 enabled = editingEnabled,
                 singleLine = true,
+                isError = serverAddress.isBlank() || (!isHostValid && serverAddress.isNotEmpty()),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Next,
@@ -147,6 +163,7 @@ fun ServerConnectionDetails(
                         .height(64.dp),
                     enabled = editingEnabled,
                     singleLine = true,
+                    isError = !isWebSockethPathValid && webSocketPath.isNotEmpty(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Uri,
                         imeAction = ImeAction.Next,
@@ -159,7 +176,7 @@ fun ServerConnectionDetails(
             }
 
         }
-        // Server port and SSL input
+        // Server port and protocol
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -175,12 +192,12 @@ fun ServerConnectionDetails(
                     }
                 },
                 label = { Text(stringResource(R.string.port) + "*") },
-                isError = serverPort == 0,
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
                 enabled = editingEnabled,
                 singleLine = true,
+                isError = !isPortValid,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -231,15 +248,15 @@ fun ServerConnectionDetails(
         }
         // Client ID
         OutlinedTextField(
-            value = clientID,
+            value = clientId,
             onValueChange = onClientIDChange,
             label = { Text(stringResource(R.string.client_id) + "*") },
-            isError = clientID.isBlank(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
             enabled = editingEnabled,
             singleLine = true,
+            isError = clientId.isBlank() || (!isClientIdValid && clientId.isNotEmpty()),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next
@@ -276,6 +293,20 @@ fun ServerConnectionDetails(
                 .height(64.dp),
             enabled = editingEnabled,
             singleLine = true,
+            visualTransformation =
+                if( passwordVisible ) VisualTransformation.None
+                else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible)
+                    Icons.Filled.Visibility
+                else Icons.Filled.VisibilityOff
+
+                val description = if (passwordVisible) "Hide password" else "Show password"
+
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = description)
+                }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Next
@@ -353,6 +384,7 @@ fun ServerConnectionDetails(
                     .height(64.dp),
                 enabled = editingEnabled,
                 singleLine = true,
+                isError = !isLastWillQosValid,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -389,6 +421,7 @@ fun ServerConnectionDetails(
                 .fillMaxWidth()
                 .height(64.dp),
             enabled = editingEnabled,
+            isError = !isLastWillTopicValid && willTopic.isNotEmpty(),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
                 autoCorrectEnabled = false,
@@ -432,7 +465,7 @@ fun ServerConnectionDetailsPreview() {
                 webSocketPath = "/mqtt",
                 serverPort = TransportProtocol.WS.defaultPort,
                 protocol = TransportProtocol.WS,
-                clientID = "test",
+                clientId = "test",
                 username = "",
                 password = "",
                 keepAlive = 60,
@@ -441,6 +474,12 @@ fun ServerConnectionDetailsPreview() {
                 willRetain = false,
                 willTopic = "",
                 willMessage = "",
+                isHostValid = true,
+                isWebSockethPathValid = true,
+                isPortValid = true,
+                isClientIdValid = true,
+                isLastWillQosValid = true,
+                isLastWillTopicValid = true,
                 editingEnabled = true,
                 onServerNameChange = {},
                 onServerAddressChange = {},

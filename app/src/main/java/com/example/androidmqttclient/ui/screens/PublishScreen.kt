@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.AMCMessage
 import com.example.androidmqttclient.data.AMCUiState
+import com.example.androidmqttclient.data.isValidForPublishing
 import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
@@ -69,6 +70,9 @@ fun PublishScreen(
     val focusManager = LocalFocusManager.current
 
     var showClearLogDialog by remember { mutableStateOf(false) }
+    val isTopicValid by remember(uiState.publishTopic) {
+        mutableStateOf(isValidForPublishing(uiState.publishTopic))
+    }
 
     Column(
         modifier = modifier
@@ -80,6 +84,7 @@ fun PublishScreen(
             value = uiState.publishTopic,
             onValueChange = onTopicChange,
             label = { Text(stringResource(R.string.topic)) },
+            isError = !isTopicValid && uiState.publishTopic.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
@@ -103,7 +108,9 @@ fun PublishScreen(
         ) {
             // QoS input
             OutlinedTextField(
-                value = if (uiState.publishQos < 0 || uiState.publishQos > 2) "" else uiState.publishQos.toString(),
+                value =
+                    if (uiState.publishQos < 0 || uiState.publishQos > 2) ""
+                    else uiState.publishQos.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 1 character (QoS max is 2)
                     if (newValue.isEmpty()) {
@@ -120,6 +127,7 @@ fun PublishScreen(
                     .weight(0.5f)
                     .height(64.dp),
                 singleLine = true,
+                isError = uiState.publishQos < 0 || uiState.publishQos > 2,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -172,7 +180,6 @@ fun PublishScreen(
                 // Close keyboard
                 focusManager.clearFocus()
 
-                // TODO: Check for valid input
                 // Publish and show confirmation snackBar
                 onPublish(
                     AMCMessage(
@@ -186,7 +193,7 @@ fun PublishScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = dimensionResource(R.dimen.padding_small)),
-            enabled = uiState.publishTopic.isNotBlank() && uiState.publishMessage.isNotBlank()
+            enabled = uiState.publishTopic.isNotBlank() && isTopicValid
         ) {
             Text(stringResource(R.string.publish))
         }

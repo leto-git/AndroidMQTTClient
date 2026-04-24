@@ -10,7 +10,9 @@ import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.AMCSubscription
 import com.example.androidmqttclient.data.AMCUiState
 import com.example.androidmqttclient.data.LogEntryType
+import com.example.androidmqttclient.data.isValidConnection
 import com.example.androidmqttclient.data.repository.AMCRepository
+import com.example.androidmqttclient.data.isValidForSubscribing
 import com.example.androidmqttclient.data.topicMatchesPattern
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -158,8 +160,12 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      * @param connection The server to add.
      */
     fun addServer(connection: AMCServerConnection) {
-        // TODO: Check for validity of server data
-        // TODO: Check if server already exists
+        if( !isValidConnection(connection) ) {
+            Log.e(tag, "Invalid connection: ${connection.connectionName}")
+            showErrorMessage("Invalid connection: ${connection.connectionName}")
+            return
+        }
+
         viewModelScope.launch {
             // Insert server into database
             amcRepository.insertServerConnection(connection)
@@ -260,8 +266,25 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      * @param subscription The subscription to add.
      */
     fun addSubscription(subscription: AMCSubscription) {
-        // TODO: Check for validity of subscription data (topic, qos, etc)
-        // TODO: Check if subscription already exists
+        // Check if topic and qos are valid
+        if( !isValidForSubscribing(subscription.topic) ) {
+            Log.e(tag, "Invalid topic: ${subscription.topic}")
+            showErrorMessage("Invalid topic: ${subscription.topic}")
+            return
+        }
+        if( subscription.qos < 0 || subscription.qos > 2 ) {
+            Log.e(tag, "Invalid Qos: ${subscription.qos}")
+            showErrorMessage("Invalid Qos: ${subscription.qos}")
+            return
+        }
+        // Check if subscription already exists
+        val alreadyExists = uiState.value.activeSubscriptions.any { it.topic == subscription.topic }
+        if( alreadyExists ) {
+            Log.e(tag, "Already subscribed to topic: ${subscription.topic}")
+            showErrorMessage("Already subscribed to topic: ${subscription.topic}")
+            return
+        }
+
         // Update UI state to indicate that subscription is in progress
         _uiState.update { it.copy(isSubscribing = true) }
 
