@@ -7,6 +7,7 @@ import com.example.androidmqttclient.data.AMCServerConnectionDao
 import com.example.androidmqttclient.data.AMCSubscription
 import com.example.androidmqttclient.data.AMCSubscriptionDao
 import com.example.androidmqttclient.data.MQTTConnectionState
+import com.example.androidmqttclient.data.TransportProtocol
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -331,31 +332,20 @@ class AMCRepository(
     }
 
     /**
-     * Build an address string for the server connection.
+     * Build an address string for the server connection, that can be used by Paho.
      *
      * @param connection The connection object containing the server information.
      *
-     * @return A string representing the server address.
+     * @return A string representing the server address (e.g. "tcp://broker.example.com:1883").
      */
     private fun buildAddress(connection: AMCServerConnection): String {
-        val rawAddress = connection.serverAddress
+        val isWebSocket = connection.protocol == TransportProtocol.WS.prefix ||
+                connection.protocol == TransportProtocol.WSS.prefix
 
-        // Determine default protocol if not provided
-        val protocol = if (connection.useSSL) "ssl://" else "tcp://"
-        val prefix = if (rawAddress.contains("://")) {
-            ""
-        } else {
-            protocol
-        }
+        // Only append the path if it's a WebSocket connection
+        val pathSuffix = if (isWebSocket) connection.webSocketPath else ""
 
-        // Only add port if the address doesn't already have one
-        val suffix = if (rawAddress.substringAfter("://").contains(":")) {
-            ""
-        } else {
-            ":${connection.serverPort}"
-        }
-
-        return "$prefix$rawAddress$suffix"
+        return "${connection.protocol}${connection.serverAddress}:${connection.serverPort}$pathSuffix"
     }
 
     /**

@@ -10,11 +10,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -26,17 +35,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.data.TransportProtocol
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
  * Composable function for displaying the server connection details.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServerConnectionDetails(
     serverName: String,
     serverAddress: String,
+    webSocketPath: String,
     serverPort: Int,
-    useSSL: Boolean,
+    protocol: TransportProtocol,
     clientID: String,
     username: String,
     password: String,
@@ -51,8 +63,9 @@ fun ServerConnectionDetails(
 
     onServerNameChange: (String) -> Unit,
     onServerAddressChange: (String) -> Unit,
+    onWebsocketPathChange: (String) -> Unit,
     onServerPortChange: (Int) -> Unit,
-    onUseSSLChange: (Boolean) -> Unit,
+    onProtocolChange: (TransportProtocol) -> Unit,
     onClientIDChange: (String) -> Unit,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
@@ -66,12 +79,15 @@ fun ServerConnectionDetails(
     // Local focus manager to jump to next field on enter
     val focusManager = LocalFocusManager.current
 
+    var expanded by remember { mutableStateOf(false) }
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Server name input
         OutlinedTextField(
             value = serverName,
             onValueChange = onServerNameChange,
-            label = { Text(stringResource(R.string.server_name)) },
+            label = { Text(stringResource(R.string.server_name) + "*") },
+            isError = serverName.isBlank(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
@@ -85,35 +101,63 @@ fun ServerConnectionDetails(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
-        // Server address (host) input
-        OutlinedTextField(
-            value = serverAddress,
-            onValueChange = onServerAddressChange,
-            label = { Text(stringResource(R.string.host)) },
-            prefix = if (!serverAddress.contains("://")) {
-                {
-                    Text(
-                        text = if (useSSL) "ssl://" else "tcp://",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Server address (host) input
+            OutlinedTextField(
+                value = serverAddress,
+                onValueChange = onServerAddressChange,
+                label = { Text(stringResource(R.string.host) + "*") },
+                isError = serverAddress.isBlank(),
+                prefix = if (!serverAddress.contains("://")) {
+                    {
+                        Text(
+                            text = protocol.prefix,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
                         )
-                    )
-                }
-            } else null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp),
-            enabled = editingEnabled,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Uri,
-                imeAction = ImeAction.Next,
-                capitalization = KeyboardCapitalization.None,
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    }
+                } else null,
+                modifier = Modifier
+                    .weight(0.75f)
+                    .height(64.dp),
+                enabled = editingEnabled,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Uri,
+                    imeAction = ImeAction.Next,
+                    capitalization = KeyboardCapitalization.None,
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                )
             )
-        )
+            // Path for ws or wss connections
+            if (protocol == TransportProtocol.WS || protocol == TransportProtocol.WSS) {
+                OutlinedTextField(
+                    value = webSocketPath,
+                    onValueChange = onWebsocketPathChange,
+                    label = { Text(stringResource(R.string.path)) },
+                    modifier = Modifier
+                        .weight(0.25f)
+                        .height(64.dp),
+                    enabled = editingEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    )
+                )
+            }
+
+        }
         // Server port and SSL input
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -129,7 +173,8 @@ fun ServerConnectionDetails(
                         onServerPortChange(newValue.toIntOrNull() ?: 0)
                     }
                 },
-                label = { Text(stringResource(R.string.port)) },
+                label = { Text(stringResource(R.string.port) + "*") },
+                isError = serverPort == 0,
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
@@ -140,33 +185,55 @@ fun ServerConnectionDetails(
                     imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
                 )
             )
-            // SSL checkbox and label
-            Row(
+            // Protocol selection
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { if (editingEnabled) expanded = !expanded },
                 modifier = Modifier
                     .weight(0.5f)
-                    .clickable { onUseSSLChange(!useSSL) },
-                horizontalArrangement = Arrangement.spacedBy(0.5.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(64.dp)
             ) {
-                Checkbox(
-                    checked = useSSL,
-                    onCheckedChange = onUseSSLChange,
+                OutlinedTextField(
+                    value = protocol.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.protocol)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.menuAnchor(
+                        type = MenuAnchorType.PrimaryNotEditable,
+                        enabled = editingEnabled
+                    ),
                     enabled = editingEnabled,
                 )
-                Text(
-                    text = stringResource(R.string.SSL),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    TransportProtocol.entries.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption.name) },
+                            onClick = {
+                                onProtocolChange(selectionOption)
+                                expanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
             }
+
         }
         // Client ID
         OutlinedTextField(
             value = clientID,
             onValueChange = onClientIDChange,
-            label = { Text(stringResource(R.string.client_id)) },
+            label = { Text(stringResource(R.string.client_id) + "*") },
+            isError = clientID.isBlank(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
@@ -367,7 +434,9 @@ fun ServerConnectionDetailsPreview() {
             ServerConnectionDetails(
                 serverName = "Test Server",
                 serverAddress = "localhost",
-                serverPort = 1883,
+                webSocketPath = "/mqtt",
+                serverPort = TransportProtocol.WS.defaultPort,
+                protocol = TransportProtocol.WS,
                 clientID = "test",
                 username = "",
                 password = "",
@@ -380,7 +449,9 @@ fun ServerConnectionDetailsPreview() {
                 editingEnabled = true,
                 onServerNameChange = {},
                 onServerAddressChange = {},
+                onWebsocketPathChange = {},
                 onServerPortChange = {},
+                onProtocolChange = {},
                 onClientIDChange = {},
                 onUsernameChange = {},
                 onPasswordChange = {},

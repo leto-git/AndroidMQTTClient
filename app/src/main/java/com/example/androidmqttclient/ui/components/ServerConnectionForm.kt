@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.data.AMCServerConnection
 import com.example.androidmqttclient.data.MQTTVersion
+import com.example.androidmqttclient.data.TransportProtocol
 
 /**
  * Composable function for displaying the server connection form.
@@ -47,9 +48,19 @@ fun ServerConnectionForm(
     var editingEnabled by remember { mutableStateOf(existingConnection == null) }
 
     var serverName by remember { mutableStateOf(existingConnection?.connectionName ?: "") }
-    var serverAddress by remember { mutableStateOf(existingConnection?.serverAddress ?: "") }
+    var protocol by remember {
+        mutableStateOf(
+            when (existingConnection?.protocol) {
+                TransportProtocol.SSL.prefix -> TransportProtocol.SSL
+                TransportProtocol.WS.prefix -> TransportProtocol.WS
+                TransportProtocol.WSS.prefix -> TransportProtocol.WSS
+                else -> TransportProtocol.TCP
+            }
+        )
+    }
+    var serverAddress by remember {mutableStateOf(existingConnection?.serverAddress ?: "") }
+    var webSocketPath by remember { mutableStateOf(existingConnection?.webSocketPath ?: "/mqtt") }
     var serverPort by remember { mutableIntStateOf(existingConnection?.serverPort ?: 1883) }
-    var useSSL by remember { mutableStateOf(existingConnection?.useSSL ?: false) }
     var clientID by remember {
         mutableStateOf(existingConnection?.clientID ?:
     "AMC_${System.currentTimeMillis().toString().takeLast(6)}")
@@ -74,9 +85,12 @@ fun ServerConnectionForm(
             id = existingConnection?.id ?: 0,
             connectionName = serverName,
             mqttVersion = MQTTVersion.V3_1_1,
+            protocol = protocol.prefix,
             serverAddress = serverAddress,
             serverPort = serverPort,
-            useSSL = useSSL,
+            webSocketPath =
+                if (protocol == TransportProtocol.WS || protocol == TransportProtocol.WSS) webSocketPath
+                else "",
             clientID = clientID,
             username = username,
             password = password,
@@ -122,17 +136,23 @@ fun ServerConnectionForm(
         ) {
             // Server connection details
             ServerConnectionDetails(
-                serverName, serverAddress, serverPort,
-                useSSL,clientID, username, password, keepAlive, cleanSession,
+                serverName, serverAddress, webSocketPath,serverPort, protocol,
+                clientID, username, password, keepAlive, cleanSession,
                 willQos, willRetain, willTopic, willMessage,
                 editingEnabled = editingEnabled,
                 onServerNameChange = { serverName = it },
                 onServerAddressChange = { serverAddress = it },
+                onWebsocketPathChange = { webSocketPath = it },
                 onServerPortChange = { serverPort = it },
-                onUseSSLChange = {
-                    useSSL = it
-                    if( it && serverPort == 1883 ) serverPort = 8883
-                    else if( !it && serverPort == 8883 ) serverPort = 1883
+                onProtocolChange = { newProtocol ->
+                    // Get all default ports from the enum to avoid magic numbers
+                    val knownDefaultPorts = TransportProtocol.entries.map { it.defaultPort }
+
+                    // If the user hasn't changed the port to a custom one, update it automatically
+                    if (serverPort in knownDefaultPorts || serverPort == 0) {
+                        serverPort = newProtocol.defaultPort
+                    }
+                    protocol = newProtocol
                 },
                 onClientIDChange = { clientID = it },
                 onUsernameChange = { username = it },
