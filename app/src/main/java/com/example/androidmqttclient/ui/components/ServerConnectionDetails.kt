@@ -17,6 +17,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -153,6 +155,9 @@ fun ServerConnectionDetails(
                 }
             }
         }
+
+        FormSectionHeader(stringResource(R.string.connection))
+
         // Server address (host) and ws path input
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -302,6 +307,9 @@ fun ServerConnectionDetails(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
+
+        FormSectionHeader(stringResource(R.string.credentials))
+
         // Username
         OutlinedTextField(
             value = username,
@@ -352,6 +360,9 @@ fun ServerConnectionDetails(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
+
+        FormSectionHeader(stringResource(R.string.session))
+
         // Keep alive and clean session
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -452,6 +463,9 @@ fun ServerConnectionDetails(
                 }
             }
         }
+
+        FormSectionHeader(stringResource(R.string.last_will))
+
         // Last will QoS and retain flag
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -537,6 +551,32 @@ fun ServerConnectionDetails(
             keyboardActions = KeyboardActions(
                 onDone = { focusManager.clearFocus() }
             )
+        )
+    }
+}
+
+/**
+ * Composable function for displaying a form section header.
+ *
+ * @param title The title of the section.
+ */
+@Composable
+private fun FormSectionHeader(title: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 8.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 4.dp),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
         )
     }
 }

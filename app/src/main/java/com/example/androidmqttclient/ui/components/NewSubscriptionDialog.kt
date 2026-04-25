@@ -172,7 +172,7 @@ fun NewSubscriptionContent(
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
                 autoCorrectEnabled = false,
-                keyboardType = KeyboardType.Text
+                keyboardType = KeyboardType.Uri
             )
         )
 

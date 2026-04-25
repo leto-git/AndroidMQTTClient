@@ -42,7 +42,7 @@
     <string name="event_log">Event log</string>
     <string name="host">Host</string>
     <string name="info">Info</string>
-    <string name="keep_alive_seconds">Keep alive (seconds)</string>
+    <string name="keep_alive_seconds">Keep alive (sec)</string>
     <string name="last_will">Last Will</string>
     <string name="last_will_message">Last-Will Message</string>
     <string name="last_will_qos">Last-Will QoS</string>
@@ -70,7 +70,7 @@
     <string name="save">Save</string>
     <string name="server_name">Server Name</string>
     <string name="session">Session</string>
-    <string name="session_expiry_s">Session Expiry (s)</string>
+    <string name="session_expiry_s">Session Expiry (sec)</string>
     <string name="status">Status</string>
     <string name="subscribe">Subscribe</string>
     <string name="subscribed_to_num_topics">Subscribed to %1$d topics</string>
