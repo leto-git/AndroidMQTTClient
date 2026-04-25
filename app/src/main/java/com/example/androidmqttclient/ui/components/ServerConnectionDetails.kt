@@ -9,12 +9,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -23,20 +37,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.data.TransportProtocol
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
  * Composable function for displaying the server connection details.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServerConnectionDetails(
     serverName: String,
     serverAddress: String,
+    webSocketPath: String,
     serverPort: Int,
-    clientID: String,
+    protocol: TransportProtocol,
+    clientId: String,
     username: String,
     password: String,
     keepAlive: Int,
@@ -46,11 +66,20 @@ fun ServerConnectionDetails(
     willTopic: String,
     willMessage: String,
 
+    isHostValid: Boolean,
+    isWebSockethPathValid: Boolean,
+    isPortValid: Boolean,
+    isClientIdValid: Boolean,
+    isLastWillQosValid: Boolean,
+    isLastWillTopicValid: Boolean,
+
     editingEnabled: Boolean,
 
     onServerNameChange: (String) -> Unit,
     onServerAddressChange: (String) -> Unit,
+    onWebsocketPathChange: (String) -> Unit,
     onServerPortChange: (Int) -> Unit,
+    onProtocolChange: (TransportProtocol) -> Unit,
     onClientIDChange: (String) -> Unit,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
@@ -64,12 +93,17 @@ fun ServerConnectionDetails(
     // Local focus manager to jump to next field on enter
     val focusManager = LocalFocusManager.current
 
+    var expanded by remember { mutableStateOf(false) }
+
+    var passwordVisible by remember { mutableStateOf(false) }
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Server name input
         OutlinedTextField(
             value = serverName,
             onValueChange = onServerNameChange,
-            label = { Text(stringResource(R.string.server_name)) },
+            label = { Text(stringResource(R.string.server_name) + "*") },
+            isError = serverName.isBlank(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
@@ -77,27 +111,38 @@ fun ServerConnectionDetails(
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next
+                imeAction = ImeAction.Next,
             ),
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
-        // Server address and port input
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             // Server address (host) input
             OutlinedTextField(
                 value = serverAddress,
                 onValueChange = onServerAddressChange,
-                label = { Text(stringResource(R.string.host)) },
+                label = { Text(stringResource(R.string.host) + "*") },
+                prefix = if (!serverAddress.contains("://")) {
+                    {
+                        Text(
+                            text = protocol.prefix,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        )
+                    }
+                } else null,
                 modifier = Modifier
-                    .weight(0.5f)
+                    .weight(0.75f)
                     .height(64.dp),
                 enabled = editingEnabled,
                 singleLine = true,
+                isError = serverAddress.isBlank() || (!isHostValid && serverAddress.isNotEmpty()),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Next,
@@ -107,6 +152,36 @@ fun ServerConnectionDetails(
                     onNext = { focusManager.moveFocus(FocusDirection.Next) }
                 )
             )
+            // Path for ws or wss connections
+            if (protocol == TransportProtocol.WS || protocol == TransportProtocol.WSS) {
+                OutlinedTextField(
+                    value = webSocketPath,
+                    onValueChange = onWebsocketPathChange,
+                    label = { Text(stringResource(R.string.path)) },
+                    modifier = Modifier
+                        .weight(0.25f)
+                        .height(64.dp),
+                    enabled = editingEnabled,
+                    singleLine = true,
+                    isError = !isWebSockethPathValid && webSocketPath.isNotEmpty(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Next,
+                        capitalization = KeyboardCapitalization.None,
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    )
+                )
+            }
+
+        }
+        // Server port and protocol
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             // Server port input
             OutlinedTextField(
                 value = if (serverPort == 0) "" else serverPort.toString(),
@@ -116,31 +191,72 @@ fun ServerConnectionDetails(
                         onServerPortChange(newValue.toIntOrNull() ?: 0)
                     }
                 },
-                label = { Text(stringResource(R.string.port)) },
+                label = { Text(stringResource(R.string.port) + "*") },
                 modifier = Modifier
                     .weight(0.5f)
                     .height(64.dp),
                 enabled = editingEnabled,
                 singleLine = true,
+                isError = !isPortValid,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
                 )
             )
+            // Protocol selection
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { if (editingEnabled) expanded = !expanded },
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(64.dp)
+            ) {
+                OutlinedTextField(
+                    value = protocol.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.protocol)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.menuAnchor(
+                        type = MenuAnchorType.PrimaryNotEditable,
+                        enabled = editingEnabled
+                    ),
+                    enabled = editingEnabled,
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    TransportProtocol.entries.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption.name) },
+                            onClick = {
+                                onProtocolChange(selectionOption)
+                                expanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+
         }
         // Client ID
         OutlinedTextField(
-            value = clientID,
+            value = clientId,
             onValueChange = onClientIDChange,
-            label = { Text(stringResource(R.string.client_id)) },
+            label = { Text(stringResource(R.string.client_id) + "*") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
             enabled = editingEnabled,
             singleLine = true,
+            isError = clientId.isBlank() || (!isClientIdValid && clientId.isNotEmpty()),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next
@@ -177,6 +293,20 @@ fun ServerConnectionDetails(
                 .height(64.dp),
             enabled = editingEnabled,
             singleLine = true,
+            visualTransformation =
+                if( passwordVisible ) VisualTransformation.None
+                else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible)
+                    Icons.Filled.Visibility
+                else Icons.Filled.VisibilityOff
+
+                val description = if (passwordVisible) "Hide password" else "Show password"
+
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = description)
+                }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Next
@@ -254,6 +384,7 @@ fun ServerConnectionDetails(
                     .height(64.dp),
                 enabled = editingEnabled,
                 singleLine = true,
+                isError = !isLastWillQosValid,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -281,48 +412,43 @@ fun ServerConnectionDetails(
                 )
             }
         }
-        // Last will topic and message
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Last will topic input
-            OutlinedTextField(
-                value = willTopic,
-                onValueChange = onWillTopicChange,
-                label = { Text(stringResource(R.string.last_will_topic)) },
-                modifier = Modifier
-                    .weight(0.5f)
-                    .height(96.dp),
-                enabled = editingEnabled,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                )
+        // Last will topic input
+        OutlinedTextField(
+            value = willTopic,
+            onValueChange = onWillTopicChange,
+            label = { Text(stringResource(R.string.last_will_topic)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            enabled = editingEnabled,
+            isError = !isLastWillTopicValid && willTopic.isNotEmpty(),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrectEnabled = false,
+                keyboardType = KeyboardType.Uri,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
-            // Last will message input
-            OutlinedTextField(
-                value = willMessage,
-                onValueChange = onWillMessageChange,
-                label = { Text(stringResource(R.string.last_will_message)) },
-                modifier = Modifier
-                    .weight(0.5f)
-                    .height(96.dp),
-                enabled = editingEnabled,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { focusManager.clearFocus() }
-                )
+        )
+        // Last will message input
+        OutlinedTextField(
+            value = willMessage,
+            onValueChange = onWillMessageChange,
+            label = { Text(stringResource(R.string.last_will_message)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(96.dp),
+            enabled = editingEnabled,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() }
             )
-        }
+        )
     }
 }
 
@@ -336,8 +462,10 @@ fun ServerConnectionDetailsPreview() {
             ServerConnectionDetails(
                 serverName = "Test Server",
                 serverAddress = "localhost",
-                serverPort = 1883,
-                clientID = "test",
+                webSocketPath = "/mqtt",
+                serverPort = TransportProtocol.WS.defaultPort,
+                protocol = TransportProtocol.WS,
+                clientId = "test",
                 username = "",
                 password = "",
                 keepAlive = 60,
@@ -346,10 +474,18 @@ fun ServerConnectionDetailsPreview() {
                 willRetain = false,
                 willTopic = "",
                 willMessage = "",
+                isHostValid = true,
+                isWebSockethPathValid = true,
+                isPortValid = true,
+                isClientIdValid = true,
+                isLastWillQosValid = true,
+                isLastWillTopicValid = true,
                 editingEnabled = true,
                 onServerNameChange = {},
                 onServerAddressChange = {},
+                onWebsocketPathChange = {},
                 onServerPortChange = {},
+                onProtocolChange = {},
                 onClientIDChange = {},
                 onUsernameChange = {},
                 onPasswordChange = {},

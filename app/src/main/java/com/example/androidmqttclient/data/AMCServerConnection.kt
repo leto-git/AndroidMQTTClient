@@ -22,8 +22,10 @@ data class AMCServerConnection(
     val mqttVersion: MQTTVersion = MQTTVersion.V3_1_1,
 
     // Connection parameters
+    val protocol: String = "",
     val serverAddress: String = "",
     val serverPort: Int = 1883,
+    val webSocketPath: String = "",
     val clientID: String = "AMC_" + System.currentTimeMillis().toString().takeLast(6),
     val username: String = "",
     val password: String = "",

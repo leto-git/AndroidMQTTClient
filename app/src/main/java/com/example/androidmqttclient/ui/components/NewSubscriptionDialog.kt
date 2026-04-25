@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
+import com.example.androidmqttclient.data.isValidForSubscribing
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
@@ -57,6 +58,8 @@ fun NewSubscriptionDialog(
     var topic by remember { mutableStateOf("") }
     var subscriptionColor by remember { mutableLongStateOf(0xFFFF0000) }
 
+    val isTopicValid = remember(topic) { isValidForSubscribing(topic) }
+
     // Define the dialog content
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -66,15 +69,19 @@ fun NewSubscriptionDialog(
                 qos,
                 topic,
                 subscriptionColor,
+                isTopicValid,
                 onQoSChange = { qos = it },
                 onTopicChange = { topic = it },
-                onColorChange = { subscriptionColor = it }
+                onColorChange = { subscriptionColor = it },
             )
         },
 
         // Confirm (Subscribe) button
         confirmButton = {
-            Button(onClick = { onConfirm(qos, topic, subscriptionColor) }) {
+            Button(
+                onClick = { onConfirm(qos, topic, subscriptionColor) },
+                enabled = isTopicValid
+            ) {
                 Text(stringResource(R.string.subscribe))
             }
         },
@@ -103,9 +110,10 @@ fun NewSubscriptionContent(
     qos: Int,
     topic: String,
     subscriptionColor: Long,
+    isTopicValid: Boolean,
     onQoSChange: (Int) -> Unit,
     onTopicChange: (String) -> Unit,
-    onColorChange: (Long) -> Unit
+    onColorChange: (Long) -> Unit,
 ) {
     // List of available colors for subscription messages
     val subscriptionColors = listOf(
@@ -160,6 +168,7 @@ fun NewSubscriptionContent(
             label = { Text(stringResource(R.string.topic)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            isError = !isTopicValid && topic.isNotEmpty(),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
                 autoCorrectEnabled = false,
@@ -176,7 +185,7 @@ fun NewSubscriptionContent(
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
             subscriptionColors.forEach { colorValue ->
                 val color = Color(colorValue)
@@ -207,6 +216,7 @@ fun NewSubscriptionContentPreview() {
                 qos = 0,
                 topic = "test/topic",
                 subscriptionColor = 0xFFFF0000,
+                isTopicValid = true,
                 onQoSChange = {},
                 onTopicChange = {},
                 onColorChange = {}

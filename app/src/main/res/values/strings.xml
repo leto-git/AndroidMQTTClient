@@ -1,4 +1,5 @@
 <resources>
+    <string name="SSL">SSL</string>
     <string name="active_subscriptions">Active Subscriptions</string>
     <string name="add">Add</string>
     <string name="add_server_screen">Add server</string>
@@ -50,14 +51,17 @@
     <string name="no_subscriptions">No active subscriptions yet.</string>
     <string name="not_connected">Not connected</string>
     <string name="password_optional">Password (optional)</string>
+    <string name="path">Path</string>
     <string name="please_connect_first">Please connect to a server first.</string>
     <string name="port">Port</string>
+    <string name="protocol">Protocol</string>
     <string name="publish">Publish</string>
     <string name="published_messages">Published messages</string>
     <string name="published_num_messages">Published %1$d messages</string>
     <string name="qos">QoS</string>
     <string name="received_messages">Received messages</string>
     <string name="received_num_messages">Received %1$d messages</string>
+    <string name="required">Required</string>
     <string name="retain">Retain</string>
     <string name="save">Save</string>
     <string name="server_name">Server Name</string>

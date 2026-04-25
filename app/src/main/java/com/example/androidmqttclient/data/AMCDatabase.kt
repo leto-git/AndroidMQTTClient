@@ -15,13 +15,12 @@ import androidx.room.RoomDatabase
         AMCServerConnection::class,
         AMCSubscription::class
     ],
-    version = 2,
+    version = 5,
     exportSchema = false)
 abstract class AMCDatabase : RoomDatabase() {
 
     // DAO for the server connections
     abstract fun serverConnectionDao(): AMCServerConnectionDao
-
     // DAO for the subscriptions
     abstract fun subscriptionDao(): AMCSubscriptionDao
 
@@ -32,7 +31,26 @@ abstract class AMCDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AMCDatabase {
             return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, AMCDatabase::class.java, "amc_database")
+                // Load SQLCipher library
+                System.loadLibrary("sqlcipher")
+                // Get shared preferences with the encryption key
+                val sharedPrefs = context.applicationContext.getSharedPreferences(
+                    "sqlcipher_prefs",
+                    Context.MODE_PRIVATE
+                )
+                // Initialize the key manager
+                val keyManager = SqlCipherKeyManager(sharedPrefs)
+                // Get the SQLCipher encryption factory
+                val factory = keyManager.getSupportFactory()
+
+                // Build the database
+                Room.databaseBuilder(
+                    context.applicationContext,
+                    AMCDatabase::class.java,
+                    "amc_database"
+                )
+                    // Apply the encryption factory
+                    .openHelperFactory(factory)
                     // Wipes and rebuilds database instead of migrating if no Migration object.
                     // TODO: Set this to false in production and add a migration object
                     .fallbackToDestructiveMigration(true)

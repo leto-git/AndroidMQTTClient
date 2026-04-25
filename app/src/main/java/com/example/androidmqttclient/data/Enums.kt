@@ -8,6 +8,13 @@ enum class MQTTVersion {
     V5
 }
 
+enum class TransportProtocol(val prefix: String, val defaultPort: Int) {
+    TCP("tcp://", 1883),
+    SSL("ssl://", 8883),
+    WS("ws://", 8080),
+    WSS("wss://", 8081)
+}
+
 /**
  * Enum class for representing the MQTT connection state.
  */
