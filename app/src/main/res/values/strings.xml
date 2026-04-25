@@ -16,6 +16,7 @@
     <string name="cancel">Cancel</string>
     <string name="cannot_view_connection_while_connected">Cannot edit connection details of the currently connected server! Please disconnect first.</string>
     <string name="clean_session">Clean session</string>
+    <string name="clean_start">Clean start</string>
     <string name="clear">Clear</string>
     <string name="clear_event_log">Clear event log</string>
     <string name="clear_log">Clear log</string>
@@ -27,9 +28,11 @@
     <string name="connect">Connect</string>
     <string name="connected_to_server_name">Connected to server: %1$s</string>
     <string name="connecting">Connecting…</string>
+    <string name="connection">Connection</string>
     <string name="connection_lost_reconnecting">Connection lost. Reconnecting…</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="copy_to_clipboard">Copy to clipboard</string>
+    <string name="credentials">Credentials</string>
     <string name="delete">Delete</string>
     <string name="delete_connection">Delete connection</string>
     <string name="disconnect">Disconnect</string>
@@ -40,6 +43,7 @@
     <string name="host">Host</string>
     <string name="info">Info</string>
     <string name="keep_alive_seconds">Keep alive (seconds)</string>
+    <string name="last_will">Last Will</string>
     <string name="last_will_message">Last-Will Message</string>
     <string name="last_will_qos">Last-Will QoS</string>
     <string name="last_will_retain">Last-Will Retain</string>
@@ -65,12 +69,14 @@
     <string name="retain">Retain</string>
     <string name="save">Save</string>
     <string name="server_name">Server Name</string>
+    <string name="session">Session</string>
+    <string name="session_expiry_s">Session Expiry (s)</string>
     <string name="status">Status</string>
     <string name="subscribe">Subscribe</string>
     <string name="subscribed_to_num_topics">Subscribed to %1$d topics</string>
     <string name="tap_plus_to_start">Tap plus on the bottom right to add a server connection.</string>
     <string name="topic">Topic</string>
     <string name="unsubscribe">Unsubscribe</string>
-    <string name="user_name_optional">User name (optional)</string>
+    <string name="user_name_optional">Username (optional)</string>
     <string name="view_subscriptions">View Subscriptions</string>
 </resources>

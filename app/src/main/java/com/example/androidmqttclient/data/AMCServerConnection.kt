@@ -31,6 +31,8 @@ data class AMCServerConnection(
     val password: String = "",
     val keepAlive: Int = 60,
     val cleanSession: Boolean = true,
+    val cleanStart: Boolean = true,
+    val sessionExpiryInterval: Long = 0L,
     val willQos: Int = 0,
     val willRetain: Boolean = false,
     val willTopic: String = "",
