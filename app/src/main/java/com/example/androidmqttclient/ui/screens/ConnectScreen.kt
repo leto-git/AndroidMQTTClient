@@ -124,7 +124,7 @@ fun ConnectScreen(
             } else {
                 LazyColumn (
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.serverConnections) { connection ->
                         val isCurrentConnection = uiState.connectedServer?.id == connection.id
@@ -288,20 +288,25 @@ fun ConnectionItem(
                     // Server name
                     Text(
                         text = connection.connectionName,
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMedium
                     )
                     // MQTT version, server address and port
                     Column(
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
-                            text = "MQTT version: ${connection.mqttVersion.label}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "MQTT v${connection.mqttVersion.label}",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.outline
                         )
                         Text(
-                            text = "${connection.protocol}${connection.serverAddress}${connection.webSocketPath}:${connection.serverPort}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "Address: ${connection.protocol}${connection.serverAddress}${connection.webSocketPath}:${connection.serverPort}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = "ClientID: ${connection.clientID}",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
@@ -320,7 +325,7 @@ fun ConnectionItem(
                         )
                     }
 
-                    // Vertical Divider between actions
+                    // Vertical Divider between buttons
                     VerticalDivider(
                         modifier = Modifier
                             .height(24.dp)

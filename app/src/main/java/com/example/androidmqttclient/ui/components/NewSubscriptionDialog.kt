@@ -15,13 +15,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -63,7 +62,12 @@ fun NewSubscriptionDialog(
     // Define the dialog content
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.new_subscription)) },
+        title = {
+            Text(
+                text = stringResource(R.string.new_subscription),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
         text = {
             NewSubscriptionContent(
                 qos,
@@ -88,7 +92,7 @@ fun NewSubscriptionDialog(
 
         // Cancel button
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
         }
@@ -125,44 +129,44 @@ fun NewSubscriptionContent(
         0xFF800080, // Purple
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        // QoS input
-        Text(
-            text = "Quality of Service (QoS)",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            listOf(0, 1, 2).forEach { qosLevel ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .selectable(
-                            selected = (qos == qosLevel),
-                            onClick = { onQoSChange(qosLevel) },
-                            role = Role.RadioButton
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column{
+            // QoS input
+            Text(
+                text = stringResource(R.string.quality_of_service_qos),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                listOf(0, 1, 2).forEach { qosLevel ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .selectable(
+                                selected = (qos == qosLevel),
+                                onClick = { onQoSChange(qosLevel) },
+                                role = Role.RadioButton
+                            )
+                            .padding(4.dp)
+                    ) {
+                        RadioButton(
+                            selected = qos == qosLevel,
+                            onClick = null
                         )
-                        .padding(4.dp)
-                ) {
-                    RadioButton(
-                        selected = qos == qosLevel,
-                        onClick = null
-                    )
-                    Text(
-                        text ="QoS $qosLevel",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                        Text(
+                            text ="QoS $qosLevel",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
                 }
             }
         }
 
-        HorizontalDivider()
-
         // Topic input
-        TextField(
+        OutlinedTextField(
             value = topic,
             onValueChange = onTopicChange,
             label = { Text(stringResource(R.string.topic)) },
@@ -176,30 +180,30 @@ fun NewSubscriptionContent(
             )
         )
 
-        HorizontalDivider()
-
-        // Color input
-        Text(
-            text = stringResource(R.string.color_for_subscription_messages),
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            subscriptionColors.forEach { colorValue ->
-                val color = Color(colorValue)
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(color, CircleShape)
-                        .clickable { onColorChange(colorValue) }
-                        .border(
-                            width = if (subscriptionColor == colorValue) 3.dp else 0.dp,
-                            color = MaterialTheme.colorScheme.outline,
-                            shape = CircleShape
-                        )
-                )
+        Column {
+            // Color input
+            Text(
+                text = stringResource(R.string.color_for_subscription_messages),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                subscriptionColors.forEach { colorValue ->
+                    val color = Color(colorValue)
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(color, CircleShape)
+                            .clickable { onColorChange(colorValue) }
+                            .border(
+                                width = if (subscriptionColor == colorValue) 3.dp else 0.dp,
+                                color = MaterialTheme.colorScheme.outline,
+                                shape = CircleShape
+                            )
+                    )
+                }
             }
         }
     }

@@ -68,7 +68,7 @@ fun SubscriptionsOverviewDialog(
         },
         title = { Text(
             text = stringResource(R.string.active_subscriptions),
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.titleLarge
         ) },
         text = {
             Column(
@@ -167,7 +167,7 @@ fun SubscriptionItem(
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(8.dp)
+                .width(6.dp)
                 .background(Color(subscription.color))
         )
         // Subscription QoS level and topic
@@ -180,7 +180,7 @@ fun SubscriptionItem(
             Text(
                 text = "QoS: ${subscription.qos}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.outline
             )
             // Subscription topic
             Text(
