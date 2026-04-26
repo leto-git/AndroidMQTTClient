@@ -69,6 +69,7 @@ fun SubscribeScreen(
     receivedMessages: List<AMCMessage>,
     connectedServer: AMCServerConnection?,
     activeSubscriptions: List<AMCSubscription>,
+    isConnected: Boolean,
     onAddSubscription: (AMCSubscription) -> Unit = {},
     onUnsubscribe: (AMCSubscription) -> Unit = {},
     onClearReceivedMessagesLog: () -> Unit = {},
@@ -89,11 +90,21 @@ fun SubscribeScreen(
         // New Subscription and View Subscriptions buttons
         Column(
             modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (!isConnected) {
+                Text(
+                    text = stringResource(R.string.please_connect_first),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
             // New Subscription button
             Button(
+                modifier = Modifier.fillMaxWidth(),
                 onClick = { showNewSubscriptionDialog = true },
-                modifier = Modifier.fillMaxWidth()
+                enabled = isConnected
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -107,8 +118,9 @@ fun SubscribeScreen(
             }
             // View Subscriptions button
             Button(
+                modifier = Modifier.fillMaxWidth(),
                 onClick = { showSubscriptionsOverviewDialog = true },
-                modifier = Modifier.fillMaxWidth()
+                enabled = isConnected
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.List,
@@ -282,7 +294,7 @@ fun SubscribeScreenPreview() {
             ),
             connectedServer = AMCServerConnection(),
             activeSubscriptions = listOf(),
-            onAddSubscription = {}
+            isConnected = false
         )
     }
 }

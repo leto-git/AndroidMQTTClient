@@ -233,6 +233,10 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 Log.d(tag, "Successfully connected to ${connection.connectionName}")
                 showInfoMessage("Connected to ${connection.connectionName}")
 
+                // Clear received and published messages
+                clearReceivedMessages()
+                clearPublishedMessages()
+
                 // Log connect
                 addLogEntry(AMCLogEntry(
                     timestamp = System.currentTimeMillis(),
@@ -263,10 +267,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             result.onSuccess {
                 Log.d(tag, "Successfully disconnected from $connectionName")
                 showInfoMessage("Disconnected from $connectionName")
-
-                // Clear received and published messages
-                clearReceivedMessages()
-                clearPublishedMessages()
 
                 // Log disconnect
                 addLogEntry(AMCLogEntry(

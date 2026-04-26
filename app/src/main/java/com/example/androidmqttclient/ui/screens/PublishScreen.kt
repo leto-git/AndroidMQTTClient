@@ -80,6 +80,7 @@ fun PublishScreen(
     publishRetain: Boolean,
     publishMessage: String,
     publishedMessages: List<AMCMessage>,
+    isConnected: Boolean,
     onTopicChange: (String) -> Unit = {},
     onQosChange: (Int) -> Unit = {},
     onRetainToggle: () -> Unit = {},
@@ -197,28 +198,51 @@ fun PublishScreen(
             )
         )
 
-        // Publish button
-        Button(
-            onClick = {
-                // Close keyboard
-                focusManager.clearFocus()
+        val canPublish = publishTopic.isNotBlank() && isTopicValid && isConnected
+        val infoText = when {
+            !isConnected -> stringResource(R.string.please_connect_first)
+            !isTopicValid && publishTopic.isNotEmpty() -> stringResource(R.string.invalid_topic)
+            else -> null
+        }
 
-                // Publish and show confirmation snackBar
-                onPublish(
-                    AMCMessage(
-                        publishTopic,
-                        publishMessage,
-                        publishQos,
-                        publishRetain
-                    )
-                )
-            },
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.padding_small)),
-            enabled = publishTopic.isNotBlank() && isTopicValid
+                .padding(top = dimensionResource(R.dimen.padding_medium)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(stringResource(R.string.publish))
+            infoText?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelMedium,
+                    color =
+                        if (!isConnected) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // Publish button
+            Button(
+                onClick = {
+                    // Close keyboard
+                    focusManager.clearFocus()
+
+                    // Publish and show confirmation snackBar
+                    onPublish(
+                        AMCMessage(
+                            publishTopic,
+                            publishMessage,
+                            publishQos,
+                            publishRetain
+                        )
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                enabled = canPublish
+            ) {
+                Text(stringResource(R.string.publish))
+            }
         }
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
@@ -348,7 +372,8 @@ fun PublishScreenPreview() {
                         1, false, timestamp = 12345),
                     AMCMessage("test/topic", "Test message 3",
                         2, false, timestamp = 123456789)
-                )
+                ),
+                isConnected = false,
             )
         }
     }

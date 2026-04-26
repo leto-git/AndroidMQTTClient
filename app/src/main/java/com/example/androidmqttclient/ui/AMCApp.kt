@@ -221,6 +221,12 @@ fun AMCApp(
 
 /**
  * Composable function for the top app bar showing current screen title etc.
+ *
+ * @param currentScreen The current screen.
+ * @param canNavigateBack Whether the back button should be shown.
+ * @param isConnected Whether the client is connected to a server.
+ * @param modifier The modifier for the composable.
+ * @param navigateUp Callback for navigating up.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -302,25 +308,12 @@ fun MQTTBottomBar(
         bottomTabScreens.forEach { screen ->
             val isSelected = currentRoute?.substringBefore("/") ==
                     screen.route.substringBefore("/")
-            val connectFirstMessage = stringResource(R.string.please_connect_first)
 
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = null) },
                 label = { Text(stringResource(screen.title)) },
                 selected = isSelected,
-                enabled = if (screen == MQTTScreen.Subscribe || screen == MQTTScreen.Publish) {
-                    isConnected
-                } else {
-                    true
-                },
                 onClick = {
-                    // Prevent navigation to subscribe and publish if not connected
-                    if( (screen == MQTTScreen.Subscribe || screen == MQTTScreen.Publish) &&
-                        !isConnected ) {
-                        onShowErrorMessage(connectFirstMessage)
-                        return@NavigationBarItem
-                    }
-
                     if (currentRoute?.substringBefore("/") !=
                         screen.route.substringBefore("/")
                     ) {
@@ -449,6 +442,7 @@ fun NavigationHost(
                 receivedMessages = uiState.receivedMessages,
                 connectedServer = uiState.connectedServer,
                 activeSubscriptions = uiState.activeSubscriptions,
+                isConnected = uiState.connectionState == MQTTConnectionState.CONNECTED,
                 onAddSubscription = { viewModel.addSubscription(it) },
                 onUnsubscribe = { viewModel.removeSubscription(it) },
                 onClearReceivedMessagesLog = { viewModel.clearReceivedMessages() }
@@ -466,6 +460,7 @@ fun NavigationHost(
                 publishRetain = uiState.publishRetain,
                 publishMessage = uiState.publishMessage,
                 publishedMessages = uiState.publishedMessages,
+                isConnected = uiState.connectionState == MQTTConnectionState.CONNECTED,
                 onTopicChange = { viewModel.updatePublishTopic(it) },
                 onQosChange = { viewModel.updatePublishQos(it) },
                 onRetainToggle = { viewModel.togglePublishRetain() },
