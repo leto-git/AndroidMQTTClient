@@ -50,7 +50,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCMessage
-import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.data.model.isValidForPublishing
 import com.example.androidmqttclient.ui.components.MessageDetailsDialog
 import com.example.androidmqttclient.ui.components.MessageItem
@@ -60,12 +59,27 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  * Composable function for showing the publish screen.
  *
  * @param modifier Modifier for styling.
+ * @param publishTopic The topic to publish to.
+ * @param publishQos The QoS to use.
+ * @param publishRetain Whether to retain the message.
+ * @param publishMessage The message to publish.
+ * @param publishedMessages The list of published messages.
+ * @param onTopicChange Callback for updating the topic.
+ * @param onQosChange Callback for updating the QoS.
+ * @param onRetainToggle Callback for toggling the retain flag.
+ * @param onMessageChange Callback for updating the message.
  * @param onPublish Callback for publishing a message.
+ * @param onClearPublishedMessagesLog Callback for clearing the published messages log.
+ * @param onShowCopyConfirmation Callback for showing a confirmation message.
  */
 @Composable
 fun PublishScreen(
     modifier: Modifier = Modifier,
-    uiState: AMCUiState,
+    publishTopic: String,
+    publishQos: Int,
+    publishRetain: Boolean,
+    publishMessage: String,
+    publishedMessages: List<AMCMessage>,
     onTopicChange: (String) -> Unit = {},
     onQosChange: (Int) -> Unit = {},
     onRetainToggle: () -> Unit = {},
@@ -78,8 +92,8 @@ fun PublishScreen(
     val focusManager = LocalFocusManager.current
 
     var showClearLogDialog by remember { mutableStateOf(false) }
-    val isTopicValid by remember(uiState.publishTopic) {
-        mutableStateOf(isValidForPublishing(uiState.publishTopic))
+    val isTopicValid by remember(publishTopic) {
+        mutableStateOf(isValidForPublishing(publishTopic))
     }
     var selectedMessageForDetails by remember { mutableStateOf<AMCMessage?>(null) }
 
@@ -90,10 +104,10 @@ fun PublishScreen(
     ) {
         // Topic input
         OutlinedTextField(
-            value = uiState.publishTopic,
+            value = publishTopic,
             onValueChange = onTopicChange,
             label = { Text(stringResource(R.string.topic)) },
-            isError = !isTopicValid && uiState.publishTopic.isNotEmpty(),
+            isError = !isTopicValid && publishTopic.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
@@ -118,8 +132,8 @@ fun PublishScreen(
             // QoS input
             OutlinedTextField(
                 value =
-                    if (uiState.publishQos < 0 || uiState.publishQos > 2) ""
-                    else uiState.publishQos.toString(),
+                    if (publishQos < 0 || publishQos > 2) ""
+                    else publishQos.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 1 character (QoS max is 2)
                     if (newValue.isEmpty()) {
@@ -136,7 +150,7 @@ fun PublishScreen(
                     .weight(0.5f)
                     .height(64.dp),
                 singleLine = true,
-                isError = uiState.publishQos < 0 || uiState.publishQos > 2,
+                isError = publishQos < 0 || publishQos > 2,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -156,7 +170,7 @@ fun PublishScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = uiState.publishRetain,
+                    checked = publishRetain,
                     onCheckedChange = { onRetainToggle() }
                 )
                 Text(
@@ -168,7 +182,7 @@ fun PublishScreen(
 
         // Message input
         OutlinedTextField(
-            value = uiState.publishMessage,
+            value = publishMessage,
             onValueChange = onMessageChange,
             label = { Text(stringResource(R.string.message)) },
             modifier = Modifier
@@ -192,17 +206,17 @@ fun PublishScreen(
                 // Publish and show confirmation snackBar
                 onPublish(
                     AMCMessage(
-                        uiState.publishTopic,
-                        uiState.publishMessage,
-                        uiState.publishQos,
-                        uiState.publishRetain
+                        publishTopic,
+                        publishMessage,
+                        publishQos,
+                        publishRetain
                     )
                 )
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = dimensionResource(R.dimen.padding_small)),
-            enabled = uiState.publishTopic.isNotBlank() && isTopicValid
+            enabled = publishTopic.isNotBlank() && isTopicValid
         ) {
             Text(stringResource(R.string.publish))
         }
@@ -228,7 +242,7 @@ fun PublishScreen(
             // Clear log button
             IconButton(
                 onClick = { showClearLogDialog = true },
-                enabled = uiState.publishedMessages.isNotEmpty()
+                enabled = publishedMessages.isNotEmpty()
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -249,13 +263,13 @@ fun PublishScreen(
                 onClick = {
                     val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                     // Join all published messages into one large string
-                    val logText = uiState.publishedMessages.joinToString("\n") { it.getMessageAsString() }
+                    val logText = publishedMessages.joinToString("\n") { it.getMessageAsString() }
                     val clip = ClipData.newPlainText("MQTT Published Messages", logText)
                     clipboard.setPrimaryClip(clip)
 
                     onShowCopyConfirmation(confirmMessage)
                 },
-                enabled = uiState.publishedMessages.isNotEmpty()
+                enabled = publishedMessages.isNotEmpty()
             ) {
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
@@ -269,7 +283,7 @@ fun PublishScreen(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(uiState.publishedMessages.asReversed()) { message ->
+            items(publishedMessages.asReversed()) { message ->
                 // Show message item
                 MessageItem(
                     message,
@@ -323,30 +337,17 @@ fun PublishScreenPreview() {
             modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
         ) {
             PublishScreen(
-                uiState = AMCUiState(
-                    publishedMessages = listOf(
-                        AMCMessage(
-                            "test/topic",
-                            "Test message 1",
-                            0,
-                            false,
-                            timestamp = 123456789
-                        ),
-                        AMCMessage(
-                            "test/topic",
-                            "Test message 2",
-                            0,
-                            false,
-                            timestamp = 123456789
-                        ),
-                        AMCMessage(
-                            "test/topic",
-                            "Test message 3",
-                            0,
-                            false,
-                            timestamp = 123456789
-                        )
-                    )
+                publishTopic = "test/topic",
+                publishQos = 0,
+                publishRetain = false,
+                publishMessage = "Test message",
+                publishedMessages = listOf(
+                    AMCMessage("test/topic", "Test message 1",
+                        0, false, timestamp = 0),
+                    AMCMessage("test/topic", "Test message 2",
+                        1, false, timestamp = 12345),
+                    AMCMessage("test/topic", "Test message 3",
+                        2, false, timestamp = 123456789)
                 )
             )
         }

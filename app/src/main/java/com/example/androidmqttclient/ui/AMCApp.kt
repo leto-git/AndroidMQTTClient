@@ -278,6 +278,11 @@ fun MQTTAppBar(
 
 /**
  * Composable showing different icons for screen navigation
+ *
+ * @param currentRoute The current route of the navigation.
+ * @param navController The navigation controller for screen navigation.
+ * @param isConnected Whether the client is connected to a server.
+ * @param onShowErrorMessage Callback for showing an error message.
  */
 @Composable
 fun MQTTBottomBar(
@@ -335,6 +340,10 @@ fun MQTTBottomBar(
 
 /**
  * Composable function for the navigation host showing different screens
+ *
+ * @param navController The navigation controller for screen navigation.
+ * @param uiState The UI state of the application.
+ * @param viewModel The view model for the application.
  */
 @Composable
 fun NavigationHost(
@@ -357,7 +366,9 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                serverConnections = uiState.serverConnections,
+                connectedServer = uiState.connectedServer,
+                connectionState = uiState.connectionState,
                 onAddConnection = { navController.navigate(MQTTScreen.AddServer.route) },
                 onConnect = { connection ->
                     // Prevent connecting if already connected
@@ -435,7 +446,9 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                receivedMessages = uiState.receivedMessages,
+                connectedServer = uiState.connectedServer,
+                activeSubscriptions = uiState.activeSubscriptions,
                 onAddSubscription = { viewModel.addSubscription(it) },
                 onUnsubscribe = { viewModel.removeSubscription(it) },
                 onClearReceivedMessagesLog = { viewModel.clearReceivedMessages() }
@@ -448,7 +461,11 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                publishTopic = uiState.publishTopic,
+                publishQos = uiState.publishQos,
+                publishRetain = uiState.publishRetain,
+                publishMessage = uiState.publishMessage,
+                publishedMessages = uiState.publishedMessages,
                 onTopicChange = { viewModel.updatePublishTopic(it) },
                 onQosChange = { viewModel.updatePublishQos(it) },
                 onRetainToggle = { viewModel.togglePublishRetain() },
@@ -464,7 +481,12 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                connectionState = uiState.connectionState,
+                connectedServer = uiState.connectedServer,
+                activeSubscriptions = uiState.activeSubscriptions,
+                numReceivedMessages = uiState.receivedMessages.size,
+                numPublishedMessages = uiState.publishedMessages.size,
+                logMessages = uiState.logMessages,
                 onShowCopyConfirmation = { confirmMessage ->
                     viewModel.showInfoMessage(confirmMessage)
                 },

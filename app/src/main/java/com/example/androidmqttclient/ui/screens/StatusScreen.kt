@@ -40,16 +40,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCLogEntry
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCSubscription
 import com.example.androidmqttclient.data.model.LogEntryType
 import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.data.model.formatTimestamp
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
-import com.example.androidmqttclient.viewmodel.AMCUiState
 
 @Composable
 fun StatusScreen (
     modifier: Modifier = Modifier,
-    uiState: AMCUiState,
+    connectionState: MQTTConnectionState,
+    connectedServer: AMCServerConnection?,
+    activeSubscriptions: List<AMCSubscription>,
+    numReceivedMessages: Int,
+    numPublishedMessages: Int,
+    logMessages: List<AMCLogEntry>,
     onShowCopyConfirmation: (String) -> Unit = {},
     onClearLog: () -> Unit = {}
 ) {
@@ -62,17 +68,17 @@ fun StatusScreen (
     ) {
         // Strings
         val connectionStatusString =
-            if (uiState.connectionState == MQTTConnectionState.CONNECTED &&
-                uiState.connectedServer != null)
+            if (connectionState == MQTTConnectionState.CONNECTED &&
+                connectedServer != null)
                 stringResource(R.string.connected_to_server_name,
-                    uiState.connectedServer.connectionName)
+                    connectedServer.connectionName)
             else stringResource(R.string.not_connected)
         val subscriptionCountString =
-            stringResource(R.string.subscribed_to_num_topics, uiState.activeSubscriptions.size)
+            stringResource(R.string.subscribed_to_num_topics, activeSubscriptions.size)
         val receivedMessagesString =
-            stringResource(R.string.received_num_messages, uiState.numReceivedMessages)
+            stringResource(R.string.received_num_messages, numReceivedMessages)
         val publishedMessagesString =
-            stringResource(R.string.published_num_messages, uiState.numPublishedMessages)
+            stringResource(R.string.published_num_messages, numPublishedMessages)
 
         // General information
         Column(
@@ -127,7 +133,7 @@ fun StatusScreen (
                 // Clear log button
                 IconButton(
                     onClick = { showClearLogDialog = true },
-                    enabled = uiState.logMessages.isNotEmpty()
+                    enabled = logMessages.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -153,13 +159,13 @@ fun StatusScreen (
                             subscriptionCountString + "\n" +
                             receivedMessagesString + "\n" +
                             publishedMessagesString + "\n\n" +
-                            uiState.logMessages.joinToString("\n") { it.getLogEntry() }
+                            logMessages.joinToString("\n") { it.getLogEntry() }
                         val clip = ClipData.newPlainText("MQTT Event Log", logText)
                         clipboard.setPrimaryClip(clip)
 
                         onShowCopyConfirmation(confirmMessage)
                     },
-                    enabled = uiState.logMessages.isNotEmpty()
+                    enabled = logMessages.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
@@ -174,7 +180,7 @@ fun StatusScreen (
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ){
-            items(uiState.logMessages.asReversed() ) { logEntry ->
+            items(logMessages.asReversed() ) { logEntry ->
                 LogEntryItem(logEntry)
             }
         }
@@ -253,14 +259,16 @@ fun LogEntryItem(
 fun StatusScreenPreview() {
     AndroidMQTTClientTheme {
         StatusScreen(
-            uiState = AMCUiState(
-                connectionState = MQTTConnectionState.CONNECTED,
-                connectedServer = null,
-                logMessages = listOf(
-                    AMCLogEntry(timestamp = 0, type = LogEntryType.CONNECT, message = "Connected to server"),
-                    AMCLogEntry(timestamp = 12345, type = LogEntryType.SUBSCRIBE, message = "Subscribed to topic"),
-                    AMCLogEntry(timestamp = 123456789, type = LogEntryType.PUBLISH_SENT, message = "Published to topic"),
-                    AMCLogEntry(timestamp = 1234567890, type = LogEntryType.PUBLISH_RECEIVED, message = "Received message"),
+            connectionState = MQTTConnectionState.CONNECTED,
+            connectedServer = AMCServerConnection(),
+            activeSubscriptions = listOf(),
+            numReceivedMessages = 0,
+            numPublishedMessages = 0,
+            logMessages = listOf(
+                AMCLogEntry(
+                    type = LogEntryType.CONNECT,
+                    message = "Connected",
+                    timestamp = System.currentTimeMillis()
                 )
             )
         )

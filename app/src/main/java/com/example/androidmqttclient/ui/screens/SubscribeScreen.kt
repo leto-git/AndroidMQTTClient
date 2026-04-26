@@ -43,9 +43,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.AMCServerConnection
 import com.example.androidmqttclient.data.model.AMCSubscription
 import com.example.androidmqttclient.ui.components.MessageDetailsDialog
-import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.components.NewSubscriptionDialog
 import com.example.androidmqttclient.ui.components.SubscriptionsOverviewDialog
@@ -55,14 +55,20 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  * Composable function for showing the subscribe screen.
  *
  * @param modifier The modifier to apply to the composable.
- * @param uiState The current UI state.
+ * @param receivedMessages The list of received messages.
+ * @param connectedServer The connected server connection.
+ * @param activeSubscriptions The list of active subscriptions.
  * @param onAddSubscription The callback to invoke when a new subscription is added.
  * @param onUnsubscribe The callback to invoke when unsubscribing from an existing subscription.
+ * @param onClearReceivedMessagesLog The callback to invoke when clearing the received messages log.
+ * @param onShowCopyConfirmation The callback to invoke when showing a copy confirmation message.
  */
 @Composable
 fun SubscribeScreen(
     modifier: Modifier = Modifier,
-    uiState: AMCUiState,
+    receivedMessages: List<AMCMessage>,
+    connectedServer: AMCServerConnection?,
+    activeSubscriptions: List<AMCSubscription>,
     onAddSubscription: (AMCSubscription) -> Unit = {},
     onUnsubscribe: (AMCSubscription) -> Unit = {},
     onClearReceivedMessagesLog: () -> Unit = {},
@@ -137,7 +143,7 @@ fun SubscribeScreen(
             // Clear log button
             IconButton(
                 onClick = { showClearLogDialog = true },
-                enabled = uiState.receivedMessages.isNotEmpty()
+                enabled = receivedMessages.isNotEmpty()
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -158,13 +164,13 @@ fun SubscribeScreen(
                 onClick = {
                     val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                     // Join all received messages into one large string
-                    val logText = uiState.receivedMessages.joinToString("\n") { it.getMessageAsString() }
+                    val logText = receivedMessages.joinToString("\n") { it.getMessageAsString() }
                     val clip = ClipData.newPlainText("MQTT Published Messages", logText)
                     clipboard.setPrimaryClip(clip)
 
                     onShowCopyConfirmation(confirmMessage)
                 },
-                enabled = uiState.receivedMessages.isNotEmpty()
+                enabled = receivedMessages.isNotEmpty()
             ) {
                 Icon(
                     imageVector = Icons.Default.ContentCopy,
@@ -178,7 +184,7 @@ fun SubscribeScreen(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(uiState.receivedMessages.asReversed()) { message ->
+            items(receivedMessages.asReversed()) { message ->
                 // Show message item
                 MessageItem(
                     message,
@@ -195,7 +201,7 @@ fun SubscribeScreen(
         NewSubscriptionDialog(
             onDismiss = { showNewSubscriptionDialog = false },
             onConfirm = { qos, topic, color ->
-                val connectionId = uiState.connectedServer?.id ?: return@NewSubscriptionDialog
+                val connectionId = connectedServer?.id ?: return@NewSubscriptionDialog
 
                 // Create a new subscription
                 val newSubscription = AMCSubscription(
@@ -216,7 +222,7 @@ fun SubscribeScreen(
     // Show the subscriptions dialog if the state is true
     if( showSubscriptionsOverviewDialog ) {
         SubscriptionsOverviewDialog(
-            subscriptions = uiState.activeSubscriptions,
+            subscriptions = activeSubscriptions,
             onDismiss = { showSubscriptionsOverviewDialog = false },
             onUnsubscribe = { subscription ->
                 onUnsubscribe(subscription)
@@ -266,24 +272,16 @@ fun SubscribeScreen(
 fun SubscribeScreenPreview() {
     AndroidMQTTClientTheme {
         SubscribeScreen(
-            uiState = AMCUiState(
-                activeSubscriptions = listOf(
-                    AMCSubscription(
-                        id = 0,
-                        serverConnectionId = 0,
-                        qos =0,
-                        topic = "test/topic",
-                        color = 0xFFFF0000)
-                ),
-                receivedMessages = listOf(
-                    AMCMessage("test/topic", "Test message 1",
-                        0, false, timestamp = 0),
-                    AMCMessage("test/topic", "Test message 2",
-                        1, false, timestamp = 12345),
-                    AMCMessage("test/topic", "Test message 3",
-                        2, false, timestamp = 123456789)
-                )
+            receivedMessages = listOf(
+                AMCMessage("test/topic", "Test message 1",
+                    0, false, timestamp = 0),
+                AMCMessage("test/topic", "Test message 2",
+                    1, false, timestamp = 12345),
+                AMCMessage("test/topic", "Test message 3",
+                    2, false, timestamp = 12345678)
             ),
+            connectedServer = AMCServerConnection(),
+            activeSubscriptions = listOf(),
             onAddSubscription = {}
         )
     }

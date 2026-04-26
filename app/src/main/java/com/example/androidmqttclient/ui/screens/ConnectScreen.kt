@@ -55,13 +55,14 @@ import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.data.model.MQTTVersion
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 import com.example.androidmqttclient.ui.theme.ConnectionGreen
-import com.example.androidmqttclient.viewmodel.AMCUiState
 
 /**
  * Composable function for showing the connect screen.
  *
  * @param modifier Modifier for styling.
- * @param uiState The current UI state.
+ * @param serverConnections List of server connections.
+ * @param connectedServer The currently connected server.
+ * @param connectionState The current connection state.
  * @param onAddConnection Callback for adding a new connection.
  * @param onConnect Callback for connecting.
  * @param onViewConnectionDetails Callback for viewing connection details.
@@ -71,7 +72,9 @@ import com.example.androidmqttclient.viewmodel.AMCUiState
 @Composable
 fun ConnectScreen(
     modifier: Modifier = Modifier,
-    uiState: AMCUiState,
+    serverConnections: List<AMCServerConnection>,
+    connectedServer: AMCServerConnection?,
+    connectionState: MQTTConnectionState,
     onAddConnection: () -> Unit = {},
     onConnect: (AMCServerConnection) -> Unit = {},
     onViewConnectionDetails: (AMCServerConnection) -> Unit = {},
@@ -91,7 +94,7 @@ fun ConnectScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            if (uiState.serverConnections.isEmpty()) {
+            if (serverConnections.isEmpty()) {
                 // Empty State Hint
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -126,8 +129,8 @@ fun ConnectScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.serverConnections) { connection ->
-                        val isCurrentConnection = uiState.connectedServer?.id == connection.id
+                    items(serverConnections) { connection ->
+                        val isCurrentConnection = connectedServer?.id == connection.id
 
                         ConnectionItem(
                             connection = connection,
@@ -151,8 +154,8 @@ fun ConnectScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Disconnect button if connected to a server
-            if( uiState.connectionState == MQTTConnectionState.CONNECTED ||
-                uiState.connectionState == MQTTConnectionState.RECONNECTING )
+            if( connectionState == MQTTConnectionState.CONNECTED ||
+                connectionState == MQTTConnectionState.RECONNECTING )
             {
                 ExtendedFloatingActionButton(
                     onClick = { showDisconnectDialog = true },
@@ -406,41 +409,45 @@ fun ConnectionItem(
 fun ConnectScreenPreview() {
     AndroidMQTTClientTheme {
         ConnectScreen(
-            uiState = AMCUiState(
-                connectionState = MQTTConnectionState.CONNECTED,
-                serverConnections = listOf(
-                    AMCServerConnection(
-                        mqttVersion = MQTTVersion.V3_1_1,
-                        connectionName = "Test Server 1",
-                        serverAddress = "localhost",
-                        serverPort = 1234,
-                        clientID = "test",
-                        username = "",
-                        password = "",
-                        keepAlive = 60,
-                        cleanSession = true,
-                        willQos = 0,
-                        willRetain = false,
-                        willTopic = "",
-                        willMessage = ""
-                    ),
-                    AMCServerConnection(
-                        mqttVersion = MQTTVersion.V3_1_1,
-                        connectionName = "Test Server 2",
-                        serverAddress = "127.0.0.1",
-                        serverPort = 5678,
-                        clientID = "test",
-                        username = "",
-                        password = "",
-                        keepAlive = 60,
-                        cleanSession = true,
-                        willQos = 0,
-                        willRetain = false,
-                        willTopic = "",
-                        willMessage = ""
-                    )
+            serverConnections = listOf(
+                AMCServerConnection(
+                    mqttVersion = MQTTVersion.V3_1_1,
+                    connectionName = "Test Server 1",
+                    serverAddress = "localhost",
+                    serverPort = 1234,
+                    clientID = "test",
+                    username = "",
+                    password = "",
+                    keepAlive = 60,
+                    cleanSession = true,
+                    willQos = 0,
+                    willRetain = false,
+                    willTopic = "",
+                    willMessage = ""
+                ),
+                AMCServerConnection(
+                    mqttVersion = MQTTVersion.V3_1_1,
+                    connectionName = "Test Server 2",
+                    serverAddress = "127.0.0.1",
+                    serverPort = 5678,
+                    clientID = "test",
+                    username = "",
+                    password = "",
+                    keepAlive = 60,
+                    cleanSession = true,
+                    willQos = 0,
+                    willRetain = false,
+                    willTopic = "",
+                    willMessage = ""
                 )
-            )
+            ),
+            connectionState = MQTTConnectionState.CONNECTED,
+            connectedServer = null,
+            onAddConnection = {},
+            onConnect = {},
+            onViewConnectionDetails = {},
+            onDisconnect = {},
+            onDeleteConnection = {}
         )
     }
 }
