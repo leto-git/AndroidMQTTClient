@@ -20,13 +20,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.androidmqttclient.data.AMCServerConnection
-import com.example.androidmqttclient.data.MQTTVersion
-import com.example.androidmqttclient.data.TransportProtocol
-import com.example.androidmqttclient.data.isValidClientId
-import com.example.androidmqttclient.data.isValidForPublishing
-import com.example.androidmqttclient.data.isValidServerAddress
-import com.example.androidmqttclient.data.isValidWebSocketPath
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.data.model.MQTTVersion
+import com.example.androidmqttclient.data.model.TransportProtocol
+import com.example.androidmqttclient.data.model.isValidClientId
+import com.example.androidmqttclient.data.model.isValidForPublishing
+import com.example.androidmqttclient.data.model.isValidServerAddress
+import com.example.androidmqttclient.data.model.isValidWebSocketPath
 
 /**
  * Composable function for displaying the server connection form.

@@ -45,10 +45,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.AMCServerConnection
-import com.example.androidmqttclient.data.AMCUiState
-import com.example.androidmqttclient.data.MQTTConnectionState
-import com.example.androidmqttclient.data.MQTTVersion
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.viewmodel.AMCUiState
+import com.example.androidmqttclient.data.model.MQTTConnectionState
+import com.example.androidmqttclient.data.model.MQTTVersion
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 import com.example.androidmqttclient.ui.theme.ConnectionGreen
 import com.example.androidmqttclient.ui.theme.ConnectionRed

@@ -38,11 +38,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.AMCLogEntry
-import com.example.androidmqttclient.data.AMCUiState
-import com.example.androidmqttclient.data.LogEntryType
-import com.example.androidmqttclient.data.MQTTConnectionState
-import com.example.androidmqttclient.data.formatTimestamp
+import com.example.androidmqttclient.data.model.AMCLogEntry
+import com.example.androidmqttclient.viewmodel.AMCUiState
+import com.example.androidmqttclient.data.model.LogEntryType
+import com.example.androidmqttclient.data.model.MQTTConnectionState
+import com.example.androidmqttclient.data.model.formatTimestamp
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 @Composable

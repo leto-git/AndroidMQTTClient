@@ -1,7 +1,7 @@
-package com.example.androidmqttclient.data.repository
+package com.example.androidmqttclient.data.remote
 
-import com.example.androidmqttclient.data.AMCMessage
-import com.example.androidmqttclient.data.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.AMCServerConnection
 
 /**
  * Interface for a wrapper around the Paho MQTT client.

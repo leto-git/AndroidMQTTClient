@@ -66,8 +66,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.AMCUiState
-import com.example.androidmqttclient.data.MQTTConnectionState
+import com.example.androidmqttclient.viewmodel.AMCUiState
+import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.ui.screens.AddServerConnectionScreen
 import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen

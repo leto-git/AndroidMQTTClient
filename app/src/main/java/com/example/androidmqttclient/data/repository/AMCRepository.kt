@@ -1,14 +1,17 @@
 package com.example.androidmqttclient.data.repository
 
 import android.util.Log
-import com.example.androidmqttclient.data.AMCMessage
-import com.example.androidmqttclient.data.AMCServerConnection
-import com.example.androidmqttclient.data.AMCServerConnectionDao
-import com.example.androidmqttclient.data.AMCSubscription
-import com.example.androidmqttclient.data.AMCSubscriptionDao
-import com.example.androidmqttclient.data.MQTTConnectionState
-import com.example.androidmqttclient.data.MQTTVersion
-import com.example.androidmqttclient.data.TransportProtocol
+import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.data.local.AMCServerConnectionDao
+import com.example.androidmqttclient.data.model.AMCSubscription
+import com.example.androidmqttclient.data.local.AMCSubscriptionDao
+import com.example.androidmqttclient.data.model.MQTTConnectionState
+import com.example.androidmqttclient.data.model.MQTTVersion
+import com.example.androidmqttclient.data.model.TransportProtocol
+import com.example.androidmqttclient.data.remote.MqttClientWrapper
+import com.example.androidmqttclient.data.remote.MqttV3ClientWrapper
+import com.example.androidmqttclient.data.remote.MqttV5ClientWrapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

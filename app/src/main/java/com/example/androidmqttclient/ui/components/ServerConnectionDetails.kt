@@ -48,8 +48,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.MQTTVersion
-import com.example.androidmqttclient.data.TransportProtocol
+import com.example.androidmqttclient.data.model.MQTTVersion
+import com.example.androidmqttclient.data.model.TransportProtocol
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**

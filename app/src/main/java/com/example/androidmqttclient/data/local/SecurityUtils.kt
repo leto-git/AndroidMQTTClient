@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.local
 
 import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec

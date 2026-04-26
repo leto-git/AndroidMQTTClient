@@ -1,9 +1,11 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.local
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCSubscription
 
 /**
  * Room database for the MQTT client.

@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.model
 
 /**
  * Enum class for representing the MQTT version.

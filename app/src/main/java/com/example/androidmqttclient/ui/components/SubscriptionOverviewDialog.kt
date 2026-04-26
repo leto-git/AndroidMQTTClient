@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.AMCSubscription
+import com.example.androidmqttclient.data.model.AMCSubscription
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**

@@ -1,10 +1,11 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.local
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.androidmqttclient.data.model.AMCSubscription
 import kotlinx.coroutines.flow.Flow
 
 /**

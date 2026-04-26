@@ -1,8 +1,9 @@
-package com.example.androidmqttclient.data.repository
+package com.example.androidmqttclient.data.remote
 
 import android.util.Log
-import com.example.androidmqttclient.data.AMCMessage
-import com.example.androidmqttclient.data.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import org.eclipse.paho.mqttv5.client.IMqttToken
 import org.eclipse.paho.mqttv5.client.MqttCallback
 import org.eclipse.paho.mqttv5.client.MqttClient
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions
@@ -72,7 +73,7 @@ class MqttV5ClientWrapper(
                 }
             }
 
-            override fun deliveryComplete(token: org.eclipse.paho.mqttv5.client.IMqttToken?) {
+            override fun deliveryComplete(token: IMqttToken?) {
                 // Intentionally empty
             }
 

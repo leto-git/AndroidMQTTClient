@@ -8,8 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.androidmqttclient.data.AMCDatabase
-import com.example.androidmqttclient.data.MQTTConnectionState
+import com.example.androidmqttclient.data.local.AMCDatabase
+import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.data.repository.AMCRepository
 import com.example.androidmqttclient.ui.AMCApp
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme

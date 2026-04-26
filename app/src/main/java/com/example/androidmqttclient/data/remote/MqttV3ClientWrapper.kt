@@ -1,9 +1,9 @@
-package com.example.androidmqttclient.data.repository
+package com.example.androidmqttclient.data.remote
 
 import android.util.Log
-import com.example.androidmqttclient.data.AMCMessage
+import com.example.androidmqttclient.data.model.AMCMessage
 import org.eclipse.paho.client.mqttv3.MqttClient
-import com.example.androidmqttclient.data.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCServerConnection
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
