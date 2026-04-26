@@ -4,7 +4,7 @@
     <string name="add">Add</string>
     <string name="add_server_screen">Add server</string>
     <string name="already_connected_to_a_server">Already connected to a server. Please disconnect first.</string>
-    <string name="app_name">AndroidMQTTClient</string>
+    <string name="app_name">AMC MQTT</string>
     <string name="are_you_sure_you_want_to_delete">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
     <string name="are_you_sure_you_want_to_delete_the_event_log">Are you sure you want to delete the event log?</string>
     <string name="are_you_sure_you_want_to_delete_the_published_messages">Are you sure you want to clear the history of published messages?</string>
