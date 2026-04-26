@@ -26,7 +26,7 @@ data class AMCServerConnection(
     val serverAddress: String = "",
     val serverPort: Int = 1883,
     val webSocketPath: String = "",
-    val clientID: String = "AMC_" + System.currentTimeMillis().toString().takeLast(6),
+    val clientID: String = "",
     val username: String = "",
     val password: String = "",
     val keepAlive: Int = 60,
