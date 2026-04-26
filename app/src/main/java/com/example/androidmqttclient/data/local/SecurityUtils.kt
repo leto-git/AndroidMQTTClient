@@ -24,16 +24,25 @@ import javax.crypto.spec.GCMParameterSpec
 class SqlCipherKeyManager(
     private val sharedPreferences: SharedPreferences
 ) {
+    /**
+     * The Android Keystore instance used for storing and retrieving the master key.
+     */
     private val keyStore: KeyStore = KeyStore.getInstance("AndroidKeyStore").apply {
         load(null)
     }
 
+    /**
+     * Companion object containing constants used for key management.
+     */
     companion object {
         private const val KEY_ALIAS = "sqlcipher_keystore_key"
         private const val ENCRYPTED_KEY_PREF = "encrypted_key"
         private const val IV_PREF = "encryption_iv"
     }
 
+    /**
+     * Initialize
+     */
     init {
         initialize()
     }
@@ -100,6 +109,11 @@ class SqlCipherKeyManager(
 
     /**
      * Decrypts the encrypted SQLCipher key using the master key.
+     *
+     * @param key The encrypted key.
+     * @param iv The initialization vector.
+     *
+     * @return The decrypted key.
      */
     private fun getDecryptedSqlCipherKey(key: String, iv: String): ByteArray {
         val encryptedKey = Base64.decode(key, Base64.NO_WRAP)
@@ -116,6 +130,8 @@ class SqlCipherKeyManager(
 
     /**
      * Gets the secret master-key from the Android Keystore.
+     *
+     * @return The secret key.
      */
     private fun getSecretKey(): SecretKey =
         (keyStore.getEntry(KEY_ALIAS, null) as KeyStore.SecretKeyEntry).secretKey
