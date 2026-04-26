@@ -75,6 +75,7 @@ import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.ui.screens.AddServerConnectionScreen
 import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen
+import com.example.androidmqttclient.ui.screens.InfoScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.ui.screens.StatusScreen
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
@@ -489,8 +490,14 @@ fun NavigationHost(
             )
         }
 
-        // TODO: Replace placeholders with actual screens
-        composable(route = MQTTScreen.Info.route) { PlaceholderScreen("Info") }
+        // Info screen
+        composable(route = MQTTScreen.Info.route) {
+            InfoScreen(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(dimensionResource(R.dimen.padding_small))
+            )
+        }
     }
 }
 
@@ -582,18 +589,5 @@ fun ReconnectIndicator(connectionState: MQTTConnectionState) {
                 )
             }
         }
-    }
-}
-
-
-// TODO: Remove placeholder
-@Composable
-fun PlaceholderScreen(name: String) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = name, style = MaterialTheme.typography.headlineLarge)
     }
 }
