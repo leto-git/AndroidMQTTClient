@@ -4,16 +4,15 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.androidmqttclient.data.AMCLogEntry
-import com.example.androidmqttclient.data.AMCMessage
-import com.example.androidmqttclient.data.AMCServerConnection
-import com.example.androidmqttclient.data.AMCSubscription
-import com.example.androidmqttclient.data.AMCUiState
-import com.example.androidmqttclient.data.LogEntryType
-import com.example.androidmqttclient.data.isValidConnection
+import com.example.androidmqttclient.data.model.AMCLogEntry
+import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCSubscription
+import com.example.androidmqttclient.data.model.LogEntryType
+import com.example.androidmqttclient.data.model.isValidConnection
 import com.example.androidmqttclient.data.repository.AMCRepository
-import com.example.androidmqttclient.data.isValidForSubscribing
-import com.example.androidmqttclient.data.topicMatchesPattern
+import com.example.androidmqttclient.data.model.isValidForSubscribing
+import com.example.androidmqttclient.data.model.topicMatchesPattern
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +27,7 @@ import kotlinx.coroutines.launch
  */
 class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
     // StateFlow holding the current state of the MQTT client
-    // _uiState is private to prevent external modification
+    // [_uiState] is private to prevent external modification
     private val _uiState = MutableStateFlow(AMCUiState())
     // Read-only property to exposes the current state
     val uiState: StateFlow<AMCUiState> = _uiState.asStateFlow()
@@ -40,6 +39,8 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
      * Initialize the ViewModel.
      */
     init {
+        // Observer repository errors
+        observeProtocolErrors()
         // Observe server connections from the database
         observeServerConnections()
         // Observe connection state from the repository
@@ -48,6 +49,19 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
         observeActiveSubscriptions()
         // Observe incoming messages from the MQTT client
         observeIncomingMessages()
+    }
+
+    /**
+     * Observe errors from the repository.
+     *
+     * This function collects errors from the repository and shows them in the UI.
+     */
+    private fun observeProtocolErrors() {
+        viewModelScope.launch {
+            amcRepository.protocolErrors.collect { error ->
+                showErrorMessage("MQTT Protocol Error", error)
+            }
+        }
     }
 
     /**
@@ -371,12 +385,7 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
         viewModelScope.launch {
             Log.d(tag, "Publishing to ${message.topic}")
 
-            val result = amcRepository.publish(
-                message.topic,
-                message.payload,
-                message.qos,
-                message.retain
-            )
+            val result = amcRepository.publish(message)
             result.onSuccess {
                 Log.d(tag, "Successfully published to ${message.topic}")
                 showInfoMessage("Published to ${message.topic}")

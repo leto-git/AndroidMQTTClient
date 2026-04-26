@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.model
 
 import androidx.compose.ui.graphics.Color
 

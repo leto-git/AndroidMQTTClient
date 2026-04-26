@@ -1,4 +1,4 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.model
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -31,6 +31,8 @@ data class AMCServerConnection(
     val password: String = "",
     val keepAlive: Int = 60,
     val cleanSession: Boolean = true,
+    val cleanStart: Boolean = true,
+    val sessionExpiryInterval: Long = 0L,
     val willQos: Int = 0,
     val willRetain: Boolean = false,
     val willTopic: String = "",

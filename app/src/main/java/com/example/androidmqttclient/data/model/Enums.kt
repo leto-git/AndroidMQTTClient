@@ -1,11 +1,11 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.model
 
 /**
  * Enum class for representing the MQTT version.
  */
-enum class MQTTVersion {
-    V3_1_1,
-    V5
+enum class MQTTVersion(val label: String) {
+    V3_1_1("3.1.1"),
+    V5("5.0")
 }
 
 enum class TransportProtocol(val prefix: String, val defaultPort: Int) {

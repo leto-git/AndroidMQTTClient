@@ -1,8 +1,9 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.data.model
 
 import android.net.InetAddresses
 import android.os.Build
 import android.util.Patterns
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -107,7 +108,7 @@ fun isValidWebSocketPath(path: String): Boolean {
 
     return try {
         // We use a dummy host to validate the path structure
-        val uri = java.net.URI("ws://localhost$path")
+        val uri = URI("ws://localhost$path")
         // Ensure there is no query (?foo=bar) or fragment (#section)
         // as these are not typically used in MQTT WS paths
         uri.query == null && uri.fragment == null

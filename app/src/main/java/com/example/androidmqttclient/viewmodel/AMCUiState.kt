@@ -1,4 +1,10 @@
-package com.example.androidmqttclient.data
+package com.example.androidmqttclient.viewmodel
+
+import com.example.androidmqttclient.data.model.MQTTConnectionState
+import com.example.androidmqttclient.data.model.AMCLogEntry
+import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCSubscription
 
 /**
  * Data class for representing the UI state of the MQTT client.

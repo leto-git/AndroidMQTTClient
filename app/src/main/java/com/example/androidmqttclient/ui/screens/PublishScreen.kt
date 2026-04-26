@@ -43,9 +43,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.AMCMessage
-import com.example.androidmqttclient.data.AMCUiState
-import com.example.androidmqttclient.data.isValidForPublishing
+import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.viewmodel.AMCUiState
+import com.example.androidmqttclient.data.model.isValidForPublishing
 import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 

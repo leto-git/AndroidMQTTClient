@@ -17,15 +17,20 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,7 +48,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.TransportProtocol
+import com.example.androidmqttclient.data.model.MQTTVersion
+import com.example.androidmqttclient.data.model.TransportProtocol
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
 /**
@@ -51,6 +58,7 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServerConnectionDetails(
+    mqttVersion: MQTTVersion,
     serverName: String,
     serverAddress: String,
     webSocketPath: String,
@@ -61,6 +69,8 @@ fun ServerConnectionDetails(
     password: String,
     keepAlive: Int,
     cleanSession: Boolean,
+    cleanStart: Boolean,
+    sessionExpiryInterval: Long,
     willQos: Int,
     willRetain: Boolean,
     willTopic: String,
@@ -75,6 +85,7 @@ fun ServerConnectionDetails(
 
     editingEnabled: Boolean,
 
+    onMqttVersionChange: (MQTTVersion) -> Unit,
     onServerNameChange: (String) -> Unit,
     onServerAddressChange: (String) -> Unit,
     onWebsocketPathChange: (String) -> Unit,
@@ -85,6 +96,8 @@ fun ServerConnectionDetails(
     onPasswordChange: (String) -> Unit,
     onKeepAliveChange: (Int) -> Unit,
     onCleanSessionChange: (Boolean) -> Unit,
+    onCleanStartChange: (Boolean) -> Unit,
+    onSessionExpiryIntervalChange: (Long) -> Unit,
     onWillQosChange: (Int) -> Unit,
     onWillRetainChange: (Boolean) -> Unit,
     onWillTopicChange: (String) -> Unit,
@@ -93,9 +106,13 @@ fun ServerConnectionDetails(
     // Local focus manager to jump to next field on enter
     val focusManager = LocalFocusManager.current
 
+    // State initialization
     var expanded by remember { mutableStateOf(false) }
-
     var passwordVisible by remember { mutableStateOf(false) }
+    var selectedIndex by remember {
+        mutableIntStateOf(if(mqttVersion == MQTTVersion.V3_1_1) 0 else 1)
+    }
+    val options = listOf(MQTTVersion.V3_1_1.name, MQTTVersion.V5.name)
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Server name input
@@ -117,6 +134,31 @@ fun ServerConnectionDetails(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
+
+        // MQTT version selection
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            options.forEachIndexed { index, label ->
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    onClick = {
+                        selectedIndex = index
+                        onMqttVersionChange(if(index == 0) MQTTVersion.V3_1_1 else MQTTVersion.V5)
+                    },
+                    selected = index == selectedIndex,
+                    enabled = editingEnabled
+                ) {
+                    Text(label)
+                }
+            }
+        }
+
+        FormSectionHeader(stringResource(R.string.connection))
+
+        // Server address (host) and ws path input
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -265,6 +307,9 @@ fun ServerConnectionDetails(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
+
+        FormSectionHeader(stringResource(R.string.credentials))
+
         // Username
         OutlinedTextField(
             value = username,
@@ -315,6 +360,9 @@ fun ServerConnectionDetails(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             )
         )
+
+        FormSectionHeader(stringResource(R.string.session))
+
         // Keep alive and clean session
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -344,25 +392,80 @@ fun ServerConnectionDetails(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
                 )
             )
-            // Clean session checkbox with label
-            Row(
-                modifier = Modifier
-                    .weight(0.5f)
-                    .clickable { onCleanSessionChange(!cleanSession) },
-                horizontalArrangement = Arrangement.spacedBy(0.5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = cleanSession,
-                    onCheckedChange = onCleanSessionChange,
-                    enabled = editingEnabled,
-                )
-                Text(
-                    text = stringResource(R.string.clean_session),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            // Clean session (MQTT 3.1.1)
+            if( mqttVersion == MQTTVersion.V3_1_1 ) {
+                // Clean session checkbox with label
+                Row(
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .clickable(enabled = editingEnabled) { onCleanSessionChange(!cleanSession) },
+                    horizontalArrangement = Arrangement.spacedBy(0.5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = cleanSession,
+                        onCheckedChange = onCleanSessionChange,
+                        enabled = editingEnabled,
+                    )
+                    Text(
+                        text = stringResource(R.string.clean_session),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
+        // Clean start and session expiry interval (MQTT 5)
+        if( mqttVersion == MQTTVersion.V5 ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Session expiry interval
+                OutlinedTextField(
+                    value = if (sessionExpiryInterval < 0) "" else sessionExpiryInterval.toString(),
+                    onValueChange = { newValue ->
+                        if (newValue.all { it.isDigit() }) {
+                            onSessionExpiryIntervalChange(newValue.toLongOrNull() ?: 0L)
+                        }
+                    },
+                    label = { Text(stringResource(R.string.session_expiry_s)) },
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .height(64.dp),
+                    enabled = editingEnabled,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                    )
+                )
+                // Clean start checkbox with label
+                Row(
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .clickable(enabled = editingEnabled) { onCleanStartChange(!cleanStart) },
+                    horizontalArrangement = Arrangement.spacedBy(0.5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = cleanStart,
+                        onCheckedChange = onCleanStartChange,
+                        enabled = editingEnabled,
+                    )
+                    Text(
+                        text = stringResource(R.string.clean_start),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        FormSectionHeader(stringResource(R.string.last_will))
+
         // Last will QoS and retain flag
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -452,6 +555,32 @@ fun ServerConnectionDetails(
     }
 }
 
+/**
+ * Composable function for displaying a form section header.
+ *
+ * @param title The title of the section.
+ */
+@Composable
+private fun FormSectionHeader(title: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 8.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 4.dp),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ServerConnectionDetailsPreview() {
@@ -460,6 +589,7 @@ fun ServerConnectionDetailsPreview() {
             modifier = Modifier.padding(16.dp),
         ) {
             ServerConnectionDetails(
+                mqttVersion = MQTTVersion.V5,
                 serverName = "Test Server",
                 serverAddress = "localhost",
                 webSocketPath = "/mqtt",
@@ -470,6 +600,8 @@ fun ServerConnectionDetailsPreview() {
                 password = "",
                 keepAlive = 60,
                 cleanSession = true,
+                cleanStart = true,
+                sessionExpiryInterval = 0L,
                 willQos = 0,
                 willRetain = false,
                 willTopic = "",
@@ -481,6 +613,7 @@ fun ServerConnectionDetailsPreview() {
                 isLastWillQosValid = true,
                 isLastWillTopicValid = true,
                 editingEnabled = true,
+                onMqttVersionChange = {},
                 onServerNameChange = {},
                 onServerAddressChange = {},
                 onWebsocketPathChange = {},
@@ -491,6 +624,8 @@ fun ServerConnectionDetailsPreview() {
                 onPasswordChange = {},
                 onKeepAliveChange = {},
                 onCleanSessionChange = {},
+                onCleanStartChange = {},
+                onSessionExpiryIntervalChange = {},
                 onWillQosChange = {},
                 onWillRetainChange = {},
                 onWillTopicChange = {},

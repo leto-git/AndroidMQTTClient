@@ -24,8 +24,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.data.AMCMessage
-import com.example.androidmqttclient.data.formatTimestamp
+import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.formatTimestamp
 
 /**
  * Composable function for displaying a single message item.
