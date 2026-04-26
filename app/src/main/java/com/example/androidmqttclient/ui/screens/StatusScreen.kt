@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
@@ -57,6 +58,19 @@ import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.data.model.formatTimestamp
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
+/**
+ * Composable function for showing the status screen.
+ *
+ * @param modifier The modifier to apply to the composable.
+ * @param connectionState The current connection state.
+ * @param connectedServer The currently connected server.
+ * @param activeSubscriptions The list of active subscriptions.
+ * @param numReceivedMessages The number of received messages.
+ * @param numPublishedMessages The number of published messages.
+ * @param logMessages The list of log messages.
+ * @param onShowCopyConfirmation Callback for showing a copy to clipboard confirmation.
+ * @param onClearLog Callback for clearing the log.
+ */
 @Composable
 fun StatusScreen (
     modifier: Modifier = Modifier,
@@ -76,42 +90,45 @@ fun StatusScreen (
             .fillMaxSize()
             .padding(dimensionResource(R.dimen.padding_small))
     ) {
-        // Strings
-        val connectionStatusString =
-            if (connectionState == MQTTConnectionState.CONNECTED &&
-                connectedServer != null)
-                stringResource(R.string.connected_to_server_name,
-                    connectedServer.connectionName)
-            else stringResource(R.string.not_connected)
-        val subscriptionCountString =
-            stringResource(R.string.subscribed_to_num_topics, activeSubscriptions.size)
-        val receivedMessagesString =
-            stringResource(R.string.received_num_messages, numReceivedMessages)
-        val publishedMessagesString =
-            stringResource(R.string.published_num_messages, numPublishedMessages)
-
         // General information
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(vertical = dimensionResource(R.dimen.padding_small)),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
         ) {
-
-            Text(
-                text = connectionStatusString,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = subscriptionCountString,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = receivedMessagesString,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = publishedMessagesString,
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+            ) {
+                DetailItem(
+                    label = (stringResource(R.string.connection)),
+                    value = connectedServer?.connectionName ?: stringResource(R.string.not_connected),
+                    modifier = Modifier.weight(1f)
+                )
+                DetailItem(
+                    label = (stringResource(R.string.subscriptions)),
+                    value = "${activeSubscriptions.size} subscriptions",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+            ) {
+                DetailItem(
+                    label = (stringResource(R.string.received)),
+                    value = "$numReceivedMessages messages",
+                    modifier = Modifier.weight(1f)
+                )
+                DetailItem(
+                    label = (stringResource(R.string.published)),
+                    value = "$numPublishedMessages messages",
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
@@ -162,14 +179,11 @@ fun StatusScreen (
                 // Copy to clipboard button
                 IconButton (
                     onClick = {
-                        val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                        val clipboard = context.getSystemService(
+                            CLIPBOARD_SERVICE
+                        ) as ClipboardManager
                         // Join all log entries into one large string
-                        val logText =
-                            connectionStatusString + "\n" +
-                            subscriptionCountString + "\n" +
-                            receivedMessagesString + "\n" +
-                            publishedMessagesString + "\n\n" +
-                            logMessages.joinToString("\n") { it.getLogEntry() }
+                        val logText = logMessages.joinToString("\n") { it.getLogEntry() }
                         val clip = ClipData.newPlainText("MQTT Event Log", logText)
                         clipboard.setPrimaryClip(clip)
 
@@ -222,6 +236,42 @@ fun StatusScreen (
     }
 }
 
+/**
+ * Helper composable to show a label and a value.
+ *
+ * @param label The label to show.
+ * @param value The value to show.
+ * @param modifier The modifier to apply to the composable.
+ */
+@Composable
+fun DetailItem(
+    label: String,
+    value: String?,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        if (value != null) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/**
+ * Composable function for showing a single log entry.
+ *
+ * @param logEntry The log entry to show.
+ */
 @Composable
 fun LogEntryItem(
     logEntry: AMCLogEntry
@@ -270,7 +320,9 @@ fun StatusScreenPreview() {
     AndroidMQTTClientTheme {
         StatusScreen(
             connectionState = MQTTConnectionState.CONNECTED,
-            connectedServer = AMCServerConnection(),
+            connectedServer = AMCServerConnection(
+                connectionName = "Test Server with a long name that should be truncated",
+            ),
             activeSubscriptions = listOf(),
             numReceivedMessages = 0,
             numPublishedMessages = 0,

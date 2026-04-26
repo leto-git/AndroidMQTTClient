@@ -29,7 +29,7 @@
     <string name="close">Close</string>
     <string name="color_for_subscription_messages">Color for subscription messages</string>
     <string name="connect">Connect</string>
-    <string name="connected_to_server_name">Connected to server: %1$s</string>
+    <string name="connected_to_server">Connected to server</string>
     <string name="connecting">Connecting…</string>
     <string name="connection">Connection</string>
     <string name="connection_lost_reconnecting">Connection lost. Reconnecting…</string>
@@ -78,12 +78,12 @@
     <string name="port">Port</string>
     <string name="protocol">Protocol</string>
     <string name="publish">Publish</string>
+    <string name="published">Published</string>
     <string name="published_messages">Published messages</string>
-    <string name="published_num_messages">Published %1$d messages</string>
     <string name="qos">QoS</string>
     <string name="quality_of_service_qos">Quality of Service (QoS)</string>
+    <string name="received">Received</string>
     <string name="received_messages">Received messages</string>
-    <string name="received_num_messages">Received %1$d messages</string>
     <string name="required">Required</string>
     <string name="retain">Retain</string>
     <string name="save">Save</string>
@@ -97,7 +97,7 @@
     <string name="sqlcipher_url">https://www.zetetic.net/sqlcipher/</string>
     <string name="status">Status</string>
     <string name="subscribe">Subscribe</string>
-    <string name="subscribed_to_num_topics">Subscribed to %1$d topics</string>
+    <string name="subscriptions">Subscriptions</string>
     <string name="tap_plus_to_start">Tap plus on the bottom right to add a server connection.</string>
     <string name="timestamp">Timestamp</string>
     <string name="topic">Topic</string>

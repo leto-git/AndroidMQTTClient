@@ -490,8 +490,8 @@ fun NavigationHost(
                 connectionState = uiState.connectionState,
                 connectedServer = uiState.connectedServer,
                 activeSubscriptions = uiState.activeSubscriptions,
-                numReceivedMessages = uiState.receivedMessages.size,
-                numPublishedMessages = uiState.publishedMessages.size,
+                numReceivedMessages = uiState.numReceivedMessages,
+                numPublishedMessages = uiState.numPublishedMessages,
                 logMessages = uiState.logMessages,
                 onShowCopyConfirmation = { confirmMessage ->
                     viewModel.showInfoMessage(confirmMessage)
