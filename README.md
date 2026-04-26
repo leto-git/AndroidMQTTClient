@@ -8,10 +8,10 @@ about the basics of MQTT.
 
 ## Features
 
-- **Modern UI:** Built entirely with Jetpack Compose and Material 3 for a fluid user experience.
 - **MQTT v3.1.1 & v5.0 Support:** Supports both MQTT v3.1.1 and v5.0 connections via Eclipse Paho integration. Some MQTT v5.0 features are not yet available!
 - **Encrypted Storage:** All broker configurations and passwords are encrypted using **SQLCipher** with 256-bit AES encryption within a Room database.
 - **Server Management:** Easily add, edit, and delete MQTT connection profiles.
+- **Modern UI:** Built entirely with Jetpack Compose and Material 3 for a fluid user experience.
 
 ## Tech Stack
 
