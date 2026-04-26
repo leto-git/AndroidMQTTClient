@@ -15,4 +15,14 @@ data class AMCMessage(
     val timestamp: Long = System.currentTimeMillis(),
     // Subscription color for message
     var subscriptionColor: Color ?= null
-)
+) {
+    /**
+     * Returns a string representation of the message including timestamp, QoS, retain,
+     * topic, and payload.
+     *
+     * @return A string representation of the message.
+     */
+    fun getMessageAsString(): String {
+        return "${formatTimestamp(timestamp)} - (q${qos}, r${if (retain) "1" else "0"}) - $topic - $payload"
+    }
+}

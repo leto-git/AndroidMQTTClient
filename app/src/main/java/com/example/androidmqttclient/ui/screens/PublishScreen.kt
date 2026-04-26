@@ -1,5 +1,8 @@
 package com.example.androidmqttclient.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context.CLIPBOARD_SERVICE
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -26,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -46,6 +52,7 @@ import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCMessage
 import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.data.model.isValidForPublishing
+import com.example.androidmqttclient.ui.components.MessageDetailsDialog
 import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
@@ -64,7 +71,8 @@ fun PublishScreen(
     onRetainToggle: () -> Unit = {},
     onMessageChange: (String) -> Unit = {},
     onPublish: (AMCMessage) -> Unit = {},
-    onClearPublishedMessagesLog: () -> Unit = {}
+    onClearPublishedMessagesLog: () -> Unit = {},
+    onShowCopyConfirmation: (String) -> Unit = {},
 ) {
     // Local focus manager to jump to next field on enter
     val focusManager = LocalFocusManager.current
@@ -73,6 +81,7 @@ fun PublishScreen(
     val isTopicValid by remember(uiState.publishTopic) {
         mutableStateOf(isValidForPublishing(uiState.publishTopic))
     }
+    var selectedMessageForDetails by remember { mutableStateOf<AMCMessage?>(null) }
 
     Column(
         modifier = modifier
@@ -207,6 +216,9 @@ fun PublishScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val context = LocalContext.current
+            val confirmMessage = stringResource(R.string.copied_to_clipboard)
+
             // Messages headline
             Text(
                 text = stringResource(R.string.published_messages),
@@ -223,6 +235,33 @@ fun PublishScreen(
                     contentDescription = stringResource(R.string.clear_log)
                 )
             }
+
+            // Vertical Divider between buttons
+            VerticalDivider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .padding(horizontal = 4.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            // Copy to clipboard button
+            IconButton (
+                onClick = {
+                    val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    // Join all published messages into one large string
+                    val logText = uiState.publishedMessages.joinToString("\n") { it.getMessageAsString() }
+                    val clip = ClipData.newPlainText("MQTT Published Messages", logText)
+                    clipboard.setPrimaryClip(clip)
+
+                    onShowCopyConfirmation(confirmMessage)
+                },
+                enabled = uiState.publishedMessages.isNotEmpty()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = stringResource(R.string.copy_to_clipboard),
+                )
+            }
         }
 
         // List of published messages
@@ -232,7 +271,12 @@ fun PublishScreen(
         ) {
             items(uiState.publishedMessages.asReversed()) { message ->
                 // Show message item
-                MessageItem(message)
+                MessageItem(
+                    message,
+                    modifier = Modifier.clickable {
+                        selectedMessageForDetails = message
+                    }
+                )
             }
         }
 
@@ -258,6 +302,14 @@ fun PublishScreen(
                         Text(stringResource(R.string.cancel))
                     }
                 }
+            )
+        }
+
+        // Show message details dialog if selected
+        selectedMessageForDetails?.let { message ->
+            MessageDetailsDialog(
+                message = message,
+                onDismiss = { selectedMessageForDetails = null }
             )
         }
     }

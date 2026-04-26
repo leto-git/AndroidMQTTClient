@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,9 +22,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,11 +40,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCLogEntry
-import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.data.model.LogEntryType
 import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.data.model.formatTimestamp
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
+import com.example.androidmqttclient.viewmodel.AMCUiState
 
 @Composable
 fun StatusScreen (
@@ -134,8 +135,16 @@ fun StatusScreen (
                     )
                 }
 
+                // Vertical Divider between buttons
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
                 // Copy to clipboard button
-                OutlinedButton (
+                IconButton (
                     onClick = {
                         val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                         // Join all log entries into one large string
@@ -154,9 +163,8 @@ fun StatusScreen (
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.copy_to_clipboard),
                     )
-                    Text(stringResource(R.string.copy_to_clipboard))
                 }
             }
         }
