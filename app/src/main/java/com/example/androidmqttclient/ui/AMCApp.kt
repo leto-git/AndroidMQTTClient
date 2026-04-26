@@ -78,6 +78,7 @@ import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.ui.screens.StatusScreen
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
+import com.example.androidmqttclient.ui.theme.ConnectionGreen
 import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.viewmodel.AMCViewModel
 
@@ -245,19 +246,12 @@ fun MQTTAppBar(
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
-                    if (isConnected) {
-                        Icon(
-                            imageVector = Icons.Default.Sensors,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.SensorsOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = if (isConnected) Icons.Default.Sensors else Icons.Default.SensorsOff,
+                        contentDescription = null,
+                        tint = if (isConnected) ConnectionGreen else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

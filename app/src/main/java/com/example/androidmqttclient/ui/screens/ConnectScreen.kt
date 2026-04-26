@@ -1,7 +1,6 @@
 package com.example.androidmqttclient.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +29,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -262,8 +262,7 @@ fun ConnectionItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
-                .padding(2.dp)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                .background(MaterialTheme.colorScheme.surface)
                 .combinedClickable(
                     onClick = { },
                     onLongClick = { showDropDownMenu = true }
@@ -280,7 +279,7 @@ fun ConnectionItem(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
@@ -289,7 +288,7 @@ fun ConnectionItem(
                     // Server name
                     Text(
                         text = connection.connectionName,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleLarge
                     )
                     // MQTT version, server address and port
                     Column(
@@ -297,12 +296,12 @@ fun ConnectionItem(
                     ) {
                         Text(
                             text = "MQTT version: ${connection.mqttVersion.label}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.outline
                         )
                         Text(
                             text = "${connection.protocol}${connection.serverAddress}${connection.webSocketPath}:${connection.serverPort}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
@@ -336,6 +335,14 @@ fun ConnectionItem(
                 }
             }
         }
+
+        HorizontalDivider(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(start = 12.dp),
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
 
         // Drop down menu after long click
         DropdownMenu(
