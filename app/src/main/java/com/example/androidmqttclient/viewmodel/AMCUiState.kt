@@ -15,6 +15,7 @@ data class AMCUiState(
     val connectionState: MQTTConnectionState = MQTTConnectionState.DISCONNECTED,
 
     val serverConnections: List<AMCServerConnection> = listOf(),
+    val takenConnectionNames: List<String> = listOf(),
 
     // Subscription related properties
     val activeSubscriptions: List<AMCSubscription> = listOf(),

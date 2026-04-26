@@ -30,6 +30,7 @@
     <string name="connecting">Connecting…</string>
     <string name="connection">Connection</string>
     <string name="connection_lost_reconnecting">Connection lost. Reconnecting…</string>
+    <string name="connection_name">Connection name</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="copy_to_clipboard">Copy to clipboard</string>
     <string name="credentials">Credentials</string>
@@ -50,6 +51,8 @@
     <string name="last_will_topic">Last-Will Topic</string>
     <string name="message">Message</string>
     <string name="messages">Messages</string>
+    <string name="name_required">Name is required.</string>
+    <string name="name_taken">Name already taken</string>
     <string name="new_subscription">New Subscription</string>
     <string name="no_servers_added">No servers added yet.</string>
     <string name="no_subscriptions">No active subscriptions yet.</string>

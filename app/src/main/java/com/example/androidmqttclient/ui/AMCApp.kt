@@ -358,6 +358,7 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
+                takenConnectionNames = uiState.takenConnectionNames,
                 onAddConnection = {
                     viewModel.addServer(it)
                     navController.popBackStack()
@@ -380,6 +381,7 @@ fun NavigationHost(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
+                    takenConnectionNames = uiState.takenConnectionNames,
                     connection = it,
                     onSave = { connection ->
                         viewModel.updateServer(connection)

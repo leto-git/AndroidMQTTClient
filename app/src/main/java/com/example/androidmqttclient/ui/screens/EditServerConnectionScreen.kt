@@ -35,18 +35,20 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  */
 @Composable
 fun EditServerConnectionScreen(
+    modifier: Modifier = Modifier,
+    takenConnectionNames: List<String> = emptyList(),
     connection: AMCServerConnection,
     onSave: (AMCServerConnection) -> Unit,
     onDelete: (AMCServerConnection) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
     // State initialization
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     ServerConnectionForm(
         modifier = modifier,
-        existingConnection = connection
+        existingConnection = connection,
+        takenConnectionNames = takenConnectionNames
     ) { isValid, isEditMode, onToggleEdit, currentData ->
         // Back, and Edit/Save buttons
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

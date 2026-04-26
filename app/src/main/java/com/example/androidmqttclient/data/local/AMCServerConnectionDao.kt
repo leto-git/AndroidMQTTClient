@@ -19,7 +19,7 @@ interface AMCServerConnectionDao {
      *
      * @param connection The server connection to insert.
      */
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertServerConnection(connection: AMCServerConnection)
 
     /**

@@ -22,13 +22,15 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  */
 @Composable
 fun AddServerConnectionScreen(
+    modifier: Modifier = Modifier,
+    takenConnectionNames: List<String> = emptyList(),
     onAddConnection: (AMCServerConnection) -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
     ServerConnectionForm(
         modifier = modifier,
-        existingConnection = null
+        existingConnection = null,
+        takenConnectionNames = takenConnectionNames,
     ) { isValid, _, _, currentData ->
         // Add button
         Button(

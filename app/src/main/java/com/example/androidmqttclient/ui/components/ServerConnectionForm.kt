@@ -42,6 +42,7 @@ import com.example.androidmqttclient.data.model.isValidWebSocketPath
 fun ServerConnectionForm(
     modifier: Modifier = Modifier,
     existingConnection: AMCServerConnection? = null,
+    takenConnectionNames: List<String> = emptyList(),
     actions: @Composable (
         isValid: Boolean,
         isEditMode: Boolean,
@@ -68,8 +69,10 @@ fun ServerConnectionForm(
     var webSocketPath by remember { mutableStateOf(existingConnection?.webSocketPath ?: "/mqtt") }
     var serverPort by remember { mutableIntStateOf(existingConnection?.serverPort ?: 1883) }
     var clientId by remember {
-        mutableStateOf(existingConnection?.clientID ?:
-    "AMC_${System.currentTimeMillis().toString().takeLast(6)}")
+        mutableStateOf(
+            existingConnection?.clientID ?:
+            "AMC_${System.currentTimeMillis().toString().takeLast(6)}"
+        )
     }
     var username by remember { mutableStateOf(existingConnection?.username ?: "") }
     var password by remember { mutableStateOf(existingConnection?.password ?: "") }
@@ -82,6 +85,18 @@ fun ServerConnectionForm(
     var willTopic by remember { mutableStateOf(existingConnection?.willTopic ?: "") }
     var willMessage by remember { mutableStateOf(existingConnection?.willMessage ?: "") }
 
+    val isConnectionNameAvailable = remember(serverName, takenConnectionNames) {
+        when {
+            serverName.isBlank() -> true
+            existingConnection == null -> {
+                !takenConnectionNames.contains(serverName)
+            }
+            else -> {
+                serverName == existingConnection.connectionName ||
+                        !takenConnectionNames.contains(serverName)
+            }
+        }
+    }
     val isHostValid = remember(serverAddress) { isValidServerAddress(serverAddress) }
     val isWebSockethPathValid = remember(webSocketPath) { isValidWebSocketPath(webSocketPath) }
     val isPortValid = remember(serverPort) { serverPort in 1..65535 }
@@ -91,7 +106,9 @@ fun ServerConnectionForm(
 
     val isWillValid = willTopic.isEmpty() || isLastWillTopicValid
 
-    val isValid = isHostValid &&
+    val isValid = isConnectionNameAvailable &&
+            serverName.isNotBlank() &&
+            isHostValid &&
             isWebSockethPathValid &&
             isPortValid &&
             isClientIdValid &&
@@ -159,7 +176,7 @@ fun ServerConnectionForm(
                 mqttVersion, serverName, serverAddress, webSocketPath,serverPort, protocol,
                 clientId, username, password, keepAlive, cleanSession, cleanStart, sessionExpiryInterval,
                 willQos, willRetain, willTopic, willMessage,
-                isHostValid, isWebSockethPathValid, isPortValid, isClientIdValid,
+                isConnectionNameAvailable, isHostValid, isWebSockethPathValid, isPortValid, isClientIdValid,
                 isLastWillQosValid, isLastWillTopicValid,
                 editingEnabled = editingEnabled,
                 onMqttVersionChange = { mqttVersion = it },

@@ -76,6 +76,7 @@ fun ServerConnectionDetails(
     willTopic: String,
     willMessage: String,
 
+    isConnectionNameAvailable: Boolean,
     isHostValid: Boolean,
     isWebSockethPathValid: Boolean,
     isPortValid: Boolean,
@@ -119,11 +120,17 @@ fun ServerConnectionDetails(
         OutlinedTextField(
             value = serverName,
             onValueChange = onServerNameChange,
-            label = { Text(stringResource(R.string.server_name) + "*") },
-            isError = serverName.isBlank(),
+            label = { Text(stringResource(R.string.connection_name) + "*") },
+            supportingText = {
+                if( serverName.isBlank() ) {
+                    Text(stringResource(R.string.name_required))
+                } else if( !isConnectionNameAvailable ) {
+                    Text(stringResource(R.string.name_taken))
+                }
+            },
+            isError = serverName.isBlank() || !isConnectionNameAvailable,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp),
+                .fillMaxWidth(),
             enabled = editingEnabled,
             singleLine = true,
             keyboardOptions = KeyboardOptions(
@@ -606,6 +613,7 @@ fun ServerConnectionDetailsPreview() {
                 willRetain = false,
                 willTopic = "",
                 willMessage = "",
+                isConnectionNameAvailable = true,
                 isHostValid = true,
                 isWebSockethPathValid = true,
                 isPortValid = true,

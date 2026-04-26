@@ -75,7 +75,10 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             amcRepository.serverConnections.collect { connections ->
                 // Update the UI State
                 _uiState.update { currentState ->
-                    currentState.copy(serverConnections = connections)
+                    currentState.copy(
+                        serverConnections = connections,
+                        takenConnectionNames = connections.map { it.connectionName }
+                    )
                 }
             }
         }
@@ -182,8 +185,12 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
 
         viewModelScope.launch {
             // Insert server into database
-            amcRepository.insertServerConnection(connection)
-            showInfoMessage("Successfully added ${connection.connectionName}")
+            amcRepository.insertServerConnection(connection).onSuccess {
+                showInfoMessage("Successfully added ${connection.connectionName}")
+            }.onFailure { error ->
+                Log.e(tag, "Error adding ${connection.connectionName}", error)
+                showErrorMessage("Could not add ${connection.connectionName}", error)
+            }
         }
     }
 
