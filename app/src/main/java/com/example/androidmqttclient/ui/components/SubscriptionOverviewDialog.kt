@@ -1,3 +1,13 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.ui.components
 
 import androidx.compose.foundation.background
@@ -68,7 +78,7 @@ fun SubscriptionsOverviewDialog(
         },
         title = { Text(
             text = stringResource(R.string.active_subscriptions),
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.titleLarge
         ) },
         text = {
             Column(
@@ -167,7 +177,7 @@ fun SubscriptionItem(
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(8.dp)
+                .width(6.dp)
                 .background(Color(subscription.color))
         )
         // Subscription QoS level and topic
@@ -180,7 +190,7 @@ fun SubscriptionItem(
             Text(
                 text = "QoS: ${subscription.qos}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.outline
             )
             // Subscription topic
             Text(

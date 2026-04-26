@@ -1,3 +1,13 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.ui
 
 import androidx.annotation.StringRes
@@ -21,16 +31,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.SensorsOff
+import androidx.compose.material.icons.filled.SouthEast
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +58,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -66,14 +81,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.ui.screens.AddServerConnectionScreen
 import com.example.androidmqttclient.ui.screens.ConnectScreen
 import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen
+import com.example.androidmqttclient.ui.screens.InfoScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.ui.screens.StatusScreen
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
+import com.example.androidmqttclient.ui.theme.ConnectionGreen
+import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.viewmodel.AMCViewModel
 
 /**
@@ -88,13 +105,13 @@ sealed class MQTTScreen (
     @StringRes val title: Int,
     val icon: ImageVector
 ) {
-    object Connect : MQTTScreen("connect", R.string.connect, Icons.Default.Call)
-    object Subscribe : MQTTScreen("subscribe", R.string.subscribe, Icons.Default.Add)
+    object Connect : MQTTScreen("connect", R.string.connect, Icons.Default.Hub)
+    object Subscribe : MQTTScreen("subscribe", R.string.subscribe, Icons.Default.SouthEast)
     object AddServer: MQTTScreen("add_server", R.string.add_server_screen, Icons.Default.Add)
     object EditServer: MQTTScreen("edit_server/{serverId}", R.string.edit_server_screen, Icons.Default.Edit) {
         fun createRoute(serverId: Int) = "edit_server/$serverId"
     }
-    object Publish : MQTTScreen("publish", R.string.publish, Icons.AutoMirrored.Default.Send)
+    object Publish : MQTTScreen("publish", R.string.publish, Icons.Default.NorthEast)
     object Status : MQTTScreen("status", R.string.status, Icons.AutoMirrored.Filled.List)
     object Info : MQTTScreen("info", R.string.info, Icons.Default.Info)
 
@@ -160,6 +177,7 @@ fun AMCApp(
             MQTTAppBar(
                 currentScreen = currentScreen,
                 canNavigateBack = canNavigateBack,
+                isConnected = uiState.connectionState == MQTTConnectionState.CONNECTED,
                 navigateUp = { navController.navigateUp() }
             )
         },
@@ -214,37 +232,74 @@ fun AMCApp(
 
 /**
  * Composable function for the top app bar showing current screen title etc.
+ *
+ * @param currentScreen The current screen.
+ * @param canNavigateBack Whether the back button should be shown.
+ * @param isConnected Whether the client is connected to a server.
+ * @param modifier The modifier for the composable.
+ * @param navigateUp Callback for navigating up.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MQTTAppBar(
     currentScreen: MQTTScreen,
     canNavigateBack: Boolean,
+    isConnected: Boolean,
     modifier: Modifier = Modifier,
     navigateUp: () -> Unit = {},
 ) {
-    TopAppBar(
-        title = { Text(
-            text = stringResource(currentScreen.title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary,
-        ) },
-        modifier = modifier,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = navigateUp) {
+    Column {
+        TopAppBar(
+            title = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = dimensionResource(R.dimen.padding_medium)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(currentScreen.title),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_button)
+                        imageVector = if (isConnected) Icons.Default.Sensors else Icons.Default.SensorsOff,
+                        contentDescription = null,
+                        tint = if (isConnected) ConnectionGreen else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+            modifier = modifier,
+            navigationIcon = {
+                if (canNavigateBack) {
+                    IconButton(onClick = navigateUp) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_button)
+                        )
+                    }
+                }
             }
-        }
-    )
+        )
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    }
 }
 
 /**
  * Composable showing different icons for screen navigation
+ *
+ * @param currentRoute The current route of the navigation.
+ * @param navController The navigation controller for screen navigation.
+ * @param isConnected Whether the client is connected to a server.
+ * @param onShowErrorMessage Callback for showing an error message.
  */
 @Composable
 fun MQTTBottomBar(
@@ -264,24 +319,12 @@ fun MQTTBottomBar(
         bottomTabScreens.forEach { screen ->
             val isSelected = currentRoute?.substringBefore("/") ==
                     screen.route.substringBefore("/")
-            val connectFirstMessage = stringResource(R.string.please_connect_first)
 
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = null) },
+                label = { Text(stringResource(screen.title)) },
                 selected = isSelected,
-                enabled = if (screen == MQTTScreen.Subscribe || screen == MQTTScreen.Publish) {
-                    isConnected
-                } else {
-                    true
-                },
                 onClick = {
-                    // Prevent navigation to subscribe and publish if not connected
-                    if( (screen == MQTTScreen.Subscribe || screen == MQTTScreen.Publish) &&
-                        !isConnected ) {
-                        onShowErrorMessage(connectFirstMessage)
-                        return@NavigationBarItem
-                    }
-
                     if (currentRoute?.substringBefore("/") !=
                         screen.route.substringBefore("/")
                     ) {
@@ -301,6 +344,10 @@ fun MQTTBottomBar(
 
 /**
  * Composable function for the navigation host showing different screens
+ *
+ * @param navController The navigation controller for screen navigation.
+ * @param uiState The UI state of the application.
+ * @param viewModel The view model for the application.
  */
 @Composable
 fun NavigationHost(
@@ -323,7 +370,9 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                serverConnections = uiState.serverConnections,
+                connectedServer = uiState.connectedServer,
+                connectionState = uiState.connectionState,
                 onAddConnection = { navController.navigate(MQTTScreen.AddServer.route) },
                 onConnect = { connection ->
                     // Prevent connecting if already connected
@@ -358,6 +407,7 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
+                takenConnectionNames = uiState.takenConnectionNames,
                 onAddConnection = {
                     viewModel.addServer(it)
                     navController.popBackStack()
@@ -380,6 +430,7 @@ fun NavigationHost(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(R.dimen.padding_small)),
+                    takenConnectionNames = uiState.takenConnectionNames,
                     connection = it,
                     onSave = { connection ->
                         viewModel.updateServer(connection)
@@ -399,7 +450,10 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                receivedMessages = uiState.receivedMessages,
+                connectedServer = uiState.connectedServer,
+                activeSubscriptions = uiState.activeSubscriptions,
+                isConnected = uiState.connectionState == MQTTConnectionState.CONNECTED,
                 onAddSubscription = { viewModel.addSubscription(it) },
                 onUnsubscribe = { viewModel.removeSubscription(it) },
                 onClearReceivedMessagesLog = { viewModel.clearReceivedMessages() }
@@ -412,7 +466,12 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                publishTopic = uiState.publishTopic,
+                publishQos = uiState.publishQos,
+                publishRetain = uiState.publishRetain,
+                publishMessage = uiState.publishMessage,
+                publishedMessages = uiState.publishedMessages,
+                isConnected = uiState.connectionState == MQTTConnectionState.CONNECTED,
                 onTopicChange = { viewModel.updatePublishTopic(it) },
                 onQosChange = { viewModel.updatePublishQos(it) },
                 onRetainToggle = { viewModel.togglePublishRetain() },
@@ -428,7 +487,12 @@ fun NavigationHost(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(dimensionResource(R.dimen.padding_small)),
-                uiState = uiState,
+                connectionState = uiState.connectionState,
+                connectedServer = uiState.connectedServer,
+                activeSubscriptions = uiState.activeSubscriptions,
+                numReceivedMessages = uiState.receivedMessages.size,
+                numPublishedMessages = uiState.publishedMessages.size,
+                logMessages = uiState.logMessages,
                 onShowCopyConfirmation = { confirmMessage ->
                     viewModel.showInfoMessage(confirmMessage)
                 },
@@ -436,8 +500,14 @@ fun NavigationHost(
             )
         }
 
-        // TODO: Replace placeholders with actual screens
-        composable(route = MQTTScreen.Info.route) { PlaceholderScreen("Info") }
+        // Info screen
+        composable(route = MQTTScreen.Info.route) {
+            InfoScreen(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(dimensionResource(R.dimen.padding_small))
+            )
+        }
     }
 }
 
@@ -529,18 +599,5 @@ fun ReconnectIndicator(connectionState: MQTTConnectionState) {
                 )
             }
         }
-    }
-}
-
-
-// TODO: Remove placeholder
-@Composable
-fun PlaceholderScreen(name: String) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = name, style = MaterialTheme.typography.headlineLarge)
     }
 }

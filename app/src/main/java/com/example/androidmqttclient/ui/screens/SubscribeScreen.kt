@@ -1,16 +1,32 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context.CLIPBOARD_SERVICE
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -21,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -35,8 +53,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCMessage
+import com.example.androidmqttclient.data.model.AMCServerConnection
 import com.example.androidmqttclient.data.model.AMCSubscription
-import com.example.androidmqttclient.viewmodel.AMCUiState
+import com.example.androidmqttclient.ui.components.MessageDetailsDialog
 import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.components.NewSubscriptionDialog
 import com.example.androidmqttclient.ui.components.SubscriptionsOverviewDialog
@@ -46,22 +65,31 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  * Composable function for showing the subscribe screen.
  *
  * @param modifier The modifier to apply to the composable.
- * @param uiState The current UI state.
+ * @param receivedMessages The list of received messages.
+ * @param connectedServer The connected server connection.
+ * @param activeSubscriptions The list of active subscriptions.
  * @param onAddSubscription The callback to invoke when a new subscription is added.
  * @param onUnsubscribe The callback to invoke when unsubscribing from an existing subscription.
+ * @param onClearReceivedMessagesLog The callback to invoke when clearing the received messages log.
+ * @param onShowCopyConfirmation The callback to invoke when showing a copy confirmation message.
  */
 @Composable
 fun SubscribeScreen(
     modifier: Modifier = Modifier,
-    uiState: AMCUiState,
+    receivedMessages: List<AMCMessage>,
+    connectedServer: AMCServerConnection?,
+    activeSubscriptions: List<AMCSubscription>,
+    isConnected: Boolean,
     onAddSubscription: (AMCSubscription) -> Unit = {},
     onUnsubscribe: (AMCSubscription) -> Unit = {},
-    onClearReceivedMessagesLog: () -> Unit = {}
+    onClearReceivedMessagesLog: () -> Unit = {},
+    onShowCopyConfirmation: (String) -> Unit = {},
 ) {
     // State to track if the new subscription dialog should be shown
     var showNewSubscriptionDialog by remember { mutableStateOf(false) }
     var showSubscriptionsOverviewDialog by remember { mutableStateOf(false) }
     var showClearLogDialog by remember { mutableStateOf(false) }
+    var selectedMessageForDetails by remember { mutableStateOf<AMCMessage?>(null) }
 
     // Column holding buttons and list of messages
     Column(
@@ -72,11 +100,21 @@ fun SubscribeScreen(
         // New Subscription and View Subscriptions buttons
         Column(
             modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (!isConnected) {
+                Text(
+                    text = stringResource(R.string.please_connect_first),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
             // New Subscription button
             Button(
+                modifier = Modifier.fillMaxWidth(),
                 onClick = { showNewSubscriptionDialog = true },
-                modifier = Modifier.fillMaxWidth()
+                enabled = isConnected
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -90,8 +128,9 @@ fun SubscribeScreen(
             }
             // View Subscriptions button
             Button(
+                modifier = Modifier.fillMaxWidth(),
                 onClick = { showSubscriptionsOverviewDialog = true },
-                modifier = Modifier.fillMaxWidth()
+                enabled = isConnected
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.List,
@@ -114,6 +153,9 @@ fun SubscribeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val context = LocalContext.current
+            val confirmMessage = stringResource(R.string.copied_to_clipboard)
+
             // Messages headline
             Text(
                 text = stringResource(R.string.received_messages),
@@ -123,11 +165,38 @@ fun SubscribeScreen(
             // Clear log button
             IconButton(
                 onClick = { showClearLogDialog = true },
-                enabled = uiState.receivedMessages.isNotEmpty()
+                enabled = receivedMessages.isNotEmpty()
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.clear_log)
+                )
+            }
+
+            // Vertical Divider between buttons
+            VerticalDivider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .padding(horizontal = 4.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            // Copy to clipboard button
+            IconButton (
+                onClick = {
+                    val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    // Join all received messages into one large string
+                    val logText = receivedMessages.joinToString("\n") { it.getMessageAsString() }
+                    val clip = ClipData.newPlainText("MQTT Published Messages", logText)
+                    clipboard.setPrimaryClip(clip)
+
+                    onShowCopyConfirmation(confirmMessage)
+                },
+                enabled = receivedMessages.isNotEmpty()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = stringResource(R.string.copy_to_clipboard),
                 )
             }
         }
@@ -137,9 +206,14 @@ fun SubscribeScreen(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(uiState.receivedMessages.asReversed()) { message ->
+            items(receivedMessages.asReversed()) { message ->
                 // Show message item
-                MessageItem(message)
+                MessageItem(
+                    message,
+                    modifier = Modifier.clickable {
+                        selectedMessageForDetails = message
+                    }
+                )
             }
         }
     }
@@ -149,7 +223,7 @@ fun SubscribeScreen(
         NewSubscriptionDialog(
             onDismiss = { showNewSubscriptionDialog = false },
             onConfirm = { qos, topic, color ->
-                val connectionId = uiState.connectedServer?.id ?: return@NewSubscriptionDialog
+                val connectionId = connectedServer?.id ?: return@NewSubscriptionDialog
 
                 // Create a new subscription
                 val newSubscription = AMCSubscription(
@@ -170,7 +244,7 @@ fun SubscribeScreen(
     // Show the subscriptions dialog if the state is true
     if( showSubscriptionsOverviewDialog ) {
         SubscriptionsOverviewDialog(
-            subscriptions = uiState.activeSubscriptions,
+            subscriptions = activeSubscriptions,
             onDismiss = { showSubscriptionsOverviewDialog = false },
             onUnsubscribe = { subscription ->
                 onUnsubscribe(subscription)
@@ -202,6 +276,14 @@ fun SubscribeScreen(
             }
         )
     }
+
+    // Show message details dialog if selected
+    selectedMessageForDetails?.let { message ->
+        MessageDetailsDialog(
+            message = message,
+            onDismiss = { selectedMessageForDetails = null }
+        )
+    }
 }
 
 /**
@@ -212,25 +294,17 @@ fun SubscribeScreen(
 fun SubscribeScreenPreview() {
     AndroidMQTTClientTheme {
         SubscribeScreen(
-            uiState = AMCUiState(
-                activeSubscriptions = listOf(
-                    AMCSubscription(
-                        id = 0,
-                        serverConnectionId = 0,
-                        qos =0,
-                        topic = "test/topic",
-                        color = 0xFFFF0000)
-                ),
-                receivedMessages = listOf(
-                    AMCMessage("test/topic", "Test message 1",
-                        0, false, timestamp = 0),
-                    AMCMessage("test/topic", "Test message 2",
-                        1, false, timestamp = 12345),
-                    AMCMessage("test/topic", "Test message 3",
-                        2, false, timestamp = 123456789)
-                )
+            receivedMessages = listOf(
+                AMCMessage("test/topic", "Test message 1",
+                    0, false, timestamp = 0),
+                AMCMessage("test/topic", "Test message 2",
+                    1, false, timestamp = 12345),
+                AMCMessage("test/topic", "Test message 3",
+                    2, false, timestamp = 12345678)
             ),
-            onAddSubscription = {}
+            connectedServer = AMCServerConnection(),
+            activeSubscriptions = listOf(),
+            isConnected = false
         )
     }
 }

@@ -1,3 +1,13 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -35,18 +45,20 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  */
 @Composable
 fun EditServerConnectionScreen(
+    modifier: Modifier = Modifier,
+    takenConnectionNames: List<String> = emptyList(),
     connection: AMCServerConnection,
     onSave: (AMCServerConnection) -> Unit,
     onDelete: (AMCServerConnection) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
     // State initialization
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     ServerConnectionForm(
         modifier = modifier,
-        existingConnection = connection
+        existingConnection = connection,
+        takenConnectionNames = takenConnectionNames
     ) { isValid, isEditMode, onToggleEdit, currentData ->
         // Back, and Edit/Save buttons
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

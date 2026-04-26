@@ -1,3 +1,13 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.viewmodel
 
 import android.util.Log
@@ -75,7 +85,10 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             amcRepository.serverConnections.collect { connections ->
                 // Update the UI State
                 _uiState.update { currentState ->
-                    currentState.copy(serverConnections = connections)
+                    currentState.copy(
+                        serverConnections = connections,
+                        takenConnectionNames = connections.map { it.connectionName }
+                    )
                 }
             }
         }
@@ -182,8 +195,12 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
 
         viewModelScope.launch {
             // Insert server into database
-            amcRepository.insertServerConnection(connection)
-            showInfoMessage("Successfully added ${connection.connectionName}")
+            amcRepository.insertServerConnection(connection).onSuccess {
+                showInfoMessage("Successfully added ${connection.connectionName}")
+            }.onFailure { error ->
+                Log.e(tag, "Error adding ${connection.connectionName}", error)
+                showErrorMessage("Could not add ${connection.connectionName}", error)
+            }
         }
     }
 
@@ -226,6 +243,10 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
                 Log.d(tag, "Successfully connected to ${connection.connectionName}")
                 showInfoMessage("Connected to ${connection.connectionName}")
 
+                // Clear received and published messages
+                clearReceivedMessages()
+                clearPublishedMessages()
+
                 // Log connect
                 addLogEntry(AMCLogEntry(
                     timestamp = System.currentTimeMillis(),
@@ -256,10 +277,6 @@ class AMCViewModel(private val amcRepository: AMCRepository): ViewModel() {
             result.onSuccess {
                 Log.d(tag, "Successfully disconnected from $connectionName")
                 showInfoMessage("Disconnected from $connectionName")
-
-                // Clear received and published messages
-                clearReceivedMessages()
-                clearPublishedMessages()
 
                 // Log disconnect
                 addLogEntry(AMCLogEntry(

@@ -1,3 +1,13 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.ui.screens
 
 import android.content.ClipData
@@ -9,6 +19,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,9 +32,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +50,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCLogEntry
-import com.example.androidmqttclient.viewmodel.AMCUiState
+import com.example.androidmqttclient.data.model.AMCServerConnection
+import com.example.androidmqttclient.data.model.AMCSubscription
 import com.example.androidmqttclient.data.model.LogEntryType
 import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.data.model.formatTimestamp
@@ -48,7 +60,12 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 @Composable
 fun StatusScreen (
     modifier: Modifier = Modifier,
-    uiState: AMCUiState,
+    connectionState: MQTTConnectionState,
+    connectedServer: AMCServerConnection?,
+    activeSubscriptions: List<AMCSubscription>,
+    numReceivedMessages: Int,
+    numPublishedMessages: Int,
+    logMessages: List<AMCLogEntry>,
     onShowCopyConfirmation: (String) -> Unit = {},
     onClearLog: () -> Unit = {}
 ) {
@@ -61,17 +78,17 @@ fun StatusScreen (
     ) {
         // Strings
         val connectionStatusString =
-            if (uiState.connectionState == MQTTConnectionState.CONNECTED &&
-                uiState.connectedServer != null)
+            if (connectionState == MQTTConnectionState.CONNECTED &&
+                connectedServer != null)
                 stringResource(R.string.connected_to_server_name,
-                    uiState.connectedServer.connectionName)
+                    connectedServer.connectionName)
             else stringResource(R.string.not_connected)
         val subscriptionCountString =
-            stringResource(R.string.subscribed_to_num_topics, uiState.activeSubscriptions.size)
+            stringResource(R.string.subscribed_to_num_topics, activeSubscriptions.size)
         val receivedMessagesString =
-            stringResource(R.string.received_num_messages, uiState.numReceivedMessages)
+            stringResource(R.string.received_num_messages, numReceivedMessages)
         val publishedMessagesString =
-            stringResource(R.string.published_num_messages, uiState.numPublishedMessages)
+            stringResource(R.string.published_num_messages, numPublishedMessages)
 
         // General information
         Column(
@@ -126,7 +143,7 @@ fun StatusScreen (
                 // Clear log button
                 IconButton(
                     onClick = { showClearLogDialog = true },
-                    enabled = uiState.logMessages.isNotEmpty()
+                    enabled = logMessages.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -134,8 +151,16 @@ fun StatusScreen (
                     )
                 }
 
+                // Vertical Divider between buttons
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
                 // Copy to clipboard button
-                OutlinedButton (
+                IconButton (
                     onClick = {
                         val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                         // Join all log entries into one large string
@@ -144,19 +169,18 @@ fun StatusScreen (
                             subscriptionCountString + "\n" +
                             receivedMessagesString + "\n" +
                             publishedMessagesString + "\n\n" +
-                            uiState.logMessages.joinToString("\n") { it.getLogEntry() }
+                            logMessages.joinToString("\n") { it.getLogEntry() }
                         val clip = ClipData.newPlainText("MQTT Event Log", logText)
                         clipboard.setPrimaryClip(clip)
 
                         onShowCopyConfirmation(confirmMessage)
                     },
-                    enabled = uiState.logMessages.isNotEmpty()
+                    enabled = logMessages.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.copy_to_clipboard),
                     )
-                    Text(stringResource(R.string.copy_to_clipboard))
                 }
             }
         }
@@ -166,7 +190,7 @@ fun StatusScreen (
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ){
-            items(uiState.logMessages.asReversed() ) { logEntry ->
+            items(logMessages.asReversed() ) { logEntry ->
                 LogEntryItem(logEntry)
             }
         }
@@ -245,14 +269,16 @@ fun LogEntryItem(
 fun StatusScreenPreview() {
     AndroidMQTTClientTheme {
         StatusScreen(
-            uiState = AMCUiState(
-                connectionState = MQTTConnectionState.CONNECTED,
-                connectedServer = null,
-                logMessages = listOf(
-                    AMCLogEntry(timestamp = 0, type = LogEntryType.CONNECT, message = "Connected to server"),
-                    AMCLogEntry(timestamp = 12345, type = LogEntryType.SUBSCRIBE, message = "Subscribed to topic"),
-                    AMCLogEntry(timestamp = 123456789, type = LogEntryType.PUBLISH_SENT, message = "Published to topic"),
-                    AMCLogEntry(timestamp = 1234567890, type = LogEntryType.PUBLISH_RECEIVED, message = "Received message"),
+            connectionState = MQTTConnectionState.CONNECTED,
+            connectedServer = AMCServerConnection(),
+            activeSubscriptions = listOf(),
+            numReceivedMessages = 0,
+            numPublishedMessages = 0,
+            logMessages = listOf(
+                AMCLogEntry(
+                    type = LogEntryType.CONNECT,
+                    message = "Connected",
+                    timestamp = System.currentTimeMillis()
                 )
             )
         )

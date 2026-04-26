@@ -1,5 +1,18 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context.CLIPBOARD_SERVICE
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -26,6 +40,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -44,8 +60,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.androidmqttclient.R
 import com.example.androidmqttclient.data.model.AMCMessage
-import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.data.model.isValidForPublishing
+import com.example.androidmqttclient.ui.components.MessageDetailsDialog
 import com.example.androidmqttclient.ui.components.MessageItem
 import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
 
@@ -53,26 +69,44 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  * Composable function for showing the publish screen.
  *
  * @param modifier Modifier for styling.
+ * @param publishTopic The topic to publish to.
+ * @param publishQos The QoS to use.
+ * @param publishRetain Whether to retain the message.
+ * @param publishMessage The message to publish.
+ * @param publishedMessages The list of published messages.
+ * @param onTopicChange Callback for updating the topic.
+ * @param onQosChange Callback for updating the QoS.
+ * @param onRetainToggle Callback for toggling the retain flag.
+ * @param onMessageChange Callback for updating the message.
  * @param onPublish Callback for publishing a message.
+ * @param onClearPublishedMessagesLog Callback for clearing the published messages log.
+ * @param onShowCopyConfirmation Callback for showing a confirmation message.
  */
 @Composable
 fun PublishScreen(
     modifier: Modifier = Modifier,
-    uiState: AMCUiState,
+    publishTopic: String,
+    publishQos: Int,
+    publishRetain: Boolean,
+    publishMessage: String,
+    publishedMessages: List<AMCMessage>,
+    isConnected: Boolean,
     onTopicChange: (String) -> Unit = {},
     onQosChange: (Int) -> Unit = {},
     onRetainToggle: () -> Unit = {},
     onMessageChange: (String) -> Unit = {},
     onPublish: (AMCMessage) -> Unit = {},
-    onClearPublishedMessagesLog: () -> Unit = {}
+    onClearPublishedMessagesLog: () -> Unit = {},
+    onShowCopyConfirmation: (String) -> Unit = {},
 ) {
     // Local focus manager to jump to next field on enter
     val focusManager = LocalFocusManager.current
 
     var showClearLogDialog by remember { mutableStateOf(false) }
-    val isTopicValid by remember(uiState.publishTopic) {
-        mutableStateOf(isValidForPublishing(uiState.publishTopic))
+    val isTopicValid by remember(publishTopic) {
+        mutableStateOf(isValidForPublishing(publishTopic))
     }
+    var selectedMessageForDetails by remember { mutableStateOf<AMCMessage?>(null) }
 
     Column(
         modifier = modifier
@@ -81,10 +115,10 @@ fun PublishScreen(
     ) {
         // Topic input
         OutlinedTextField(
-            value = uiState.publishTopic,
+            value = publishTopic,
             onValueChange = onTopicChange,
             label = { Text(stringResource(R.string.topic)) },
-            isError = !isTopicValid && uiState.publishTopic.isNotEmpty(),
+            isError = !isTopicValid && publishTopic.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
@@ -109,8 +143,8 @@ fun PublishScreen(
             // QoS input
             OutlinedTextField(
                 value =
-                    if (uiState.publishQos < 0 || uiState.publishQos > 2) ""
-                    else uiState.publishQos.toString(),
+                    if (publishQos < 0 || publishQos > 2) ""
+                    else publishQos.toString(),
                 onValueChange = { newValue ->
                     // Only allow numeric input and limit to 1 character (QoS max is 2)
                     if (newValue.isEmpty()) {
@@ -127,7 +161,7 @@ fun PublishScreen(
                     .weight(0.5f)
                     .height(64.dp),
                 singleLine = true,
-                isError = uiState.publishQos < 0 || uiState.publishQos > 2,
+                isError = publishQos < 0 || publishQos > 2,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -147,7 +181,7 @@ fun PublishScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = uiState.publishRetain,
+                    checked = publishRetain,
                     onCheckedChange = { onRetainToggle() }
                 )
                 Text(
@@ -159,7 +193,7 @@ fun PublishScreen(
 
         // Message input
         OutlinedTextField(
-            value = uiState.publishMessage,
+            value = publishMessage,
             onValueChange = onMessageChange,
             label = { Text(stringResource(R.string.message)) },
             modifier = Modifier
@@ -174,28 +208,51 @@ fun PublishScreen(
             )
         )
 
-        // Publish button
-        Button(
-            onClick = {
-                // Close keyboard
-                focusManager.clearFocus()
+        val canPublish = publishTopic.isNotBlank() && isTopicValid && isConnected
+        val infoText = when {
+            !isConnected -> stringResource(R.string.please_connect_first)
+            !isTopicValid && publishTopic.isNotEmpty() -> stringResource(R.string.invalid_topic)
+            else -> null
+        }
 
-                // Publish and show confirmation snackBar
-                onPublish(
-                    AMCMessage(
-                        uiState.publishTopic,
-                        uiState.publishMessage,
-                        uiState.publishQos,
-                        uiState.publishRetain
-                    )
-                )
-            },
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = dimensionResource(R.dimen.padding_small)),
-            enabled = uiState.publishTopic.isNotBlank() && isTopicValid
+                .padding(top = dimensionResource(R.dimen.padding_medium)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(stringResource(R.string.publish))
+            infoText?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelMedium,
+                    color =
+                        if (!isConnected) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // Publish button
+            Button(
+                onClick = {
+                    // Close keyboard
+                    focusManager.clearFocus()
+
+                    // Publish and show confirmation snackBar
+                    onPublish(
+                        AMCMessage(
+                            publishTopic,
+                            publishMessage,
+                            publishQos,
+                            publishRetain
+                        )
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                enabled = canPublish
+            ) {
+                Text(stringResource(R.string.publish))
+            }
         }
 
         HorizontalDivider(Modifier.padding(top = dimensionResource(R.dimen.padding_small)))
@@ -207,6 +264,9 @@ fun PublishScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val context = LocalContext.current
+            val confirmMessage = stringResource(R.string.copied_to_clipboard)
+
             // Messages headline
             Text(
                 text = stringResource(R.string.published_messages),
@@ -216,11 +276,38 @@ fun PublishScreen(
             // Clear log button
             IconButton(
                 onClick = { showClearLogDialog = true },
-                enabled = uiState.publishedMessages.isNotEmpty()
+                enabled = publishedMessages.isNotEmpty()
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.clear_log)
+                )
+            }
+
+            // Vertical Divider between buttons
+            VerticalDivider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .padding(horizontal = 4.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            // Copy to clipboard button
+            IconButton (
+                onClick = {
+                    val clipboard = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    // Join all published messages into one large string
+                    val logText = publishedMessages.joinToString("\n") { it.getMessageAsString() }
+                    val clip = ClipData.newPlainText("MQTT Published Messages", logText)
+                    clipboard.setPrimaryClip(clip)
+
+                    onShowCopyConfirmation(confirmMessage)
+                },
+                enabled = publishedMessages.isNotEmpty()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = stringResource(R.string.copy_to_clipboard),
                 )
             }
         }
@@ -230,9 +317,14 @@ fun PublishScreen(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(uiState.publishedMessages.asReversed()) { message ->
+            items(publishedMessages.asReversed()) { message ->
                 // Show message item
-                MessageItem(message)
+                MessageItem(
+                    message,
+                    modifier = Modifier.clickable {
+                        selectedMessageForDetails = message
+                    }
+                )
             }
         }
 
@@ -260,6 +352,14 @@ fun PublishScreen(
                 }
             )
         }
+
+        // Show message details dialog if selected
+        selectedMessageForDetails?.let { message ->
+            MessageDetailsDialog(
+                message = message,
+                onDismiss = { selectedMessageForDetails = null }
+            )
+        }
     }
 }
 
@@ -271,31 +371,19 @@ fun PublishScreenPreview() {
             modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium)),
         ) {
             PublishScreen(
-                uiState = AMCUiState(
-                    publishedMessages = listOf(
-                        AMCMessage(
-                            "test/topic",
-                            "Test message 1",
-                            0,
-                            false,
-                            timestamp = 123456789
-                        ),
-                        AMCMessage(
-                            "test/topic",
-                            "Test message 2",
-                            0,
-                            false,
-                            timestamp = 123456789
-                        ),
-                        AMCMessage(
-                            "test/topic",
-                            "Test message 3",
-                            0,
-                            false,
-                            timestamp = 123456789
-                        )
-                    )
-                )
+                publishTopic = "test/topic",
+                publishQos = 0,
+                publishRetain = false,
+                publishMessage = "Test message",
+                publishedMessages = listOf(
+                    AMCMessage("test/topic", "Test message 1",
+                        0, false, timestamp = 0),
+                    AMCMessage("test/topic", "Test message 2",
+                        1, false, timestamp = 12345),
+                    AMCMessage("test/topic", "Test message 3",
+                        2, false, timestamp = 123456789)
+                ),
+                isConnected = false,
             )
         }
     }

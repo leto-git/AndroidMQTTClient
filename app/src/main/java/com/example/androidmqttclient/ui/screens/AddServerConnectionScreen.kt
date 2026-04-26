@@ -1,3 +1,13 @@
+/*
+ * Copyright 2026 Tobias Leikam (RheinMain University of Applied Sciences)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.example.androidmqttclient.ui.screens
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,13 +32,15 @@ import com.example.androidmqttclient.ui.theme.AndroidMQTTClientTheme
  */
 @Composable
 fun AddServerConnectionScreen(
+    modifier: Modifier = Modifier,
+    takenConnectionNames: List<String> = emptyList(),
     onAddConnection: (AMCServerConnection) -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
     ServerConnectionForm(
         modifier = modifier,
-        existingConnection = null
+        existingConnection = null,
+        takenConnectionNames = takenConnectionNames,
     ) { isValid, _, _, currentData ->
         // Add button
         Button(

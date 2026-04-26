@@ -1,0 +1,31 @@
+Android MQTT Client (AMC)
+Copyright (c) 2026 [Tobias Leikam/leto-git]
+
+This product includes software developed by the following projects:
+
+-------------------------------------------------------------------------
+Eclipse Paho (MQTT Client)
+License: Eclipse Public License 2.0
+Copyright (c) Eclipse Foundation and Paho Contributors
+URL: https://eclipse.dev/paho/
+-------------------------------------------------------------------------
+SQLCipher for Android (Database Encryption)
+License: BSD-style License
+Copyright (c) Zetetic LLC
+URL: https://www.zetetic.net/sqlcipher/
+
+This software uses SQLCipher for Android, provided by Zetetic LLC.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the requirements of the
+SQLCipher license are met.
+-------------------------------------------------------------------------
+Android Jetpack (Compose, Room, etc.)
+License: Apache License 2.0
+Copyright (c) Google LLC
+URL: https://developer.android.com/jetpack
+-------------------------------------------------------------------------
+Project Note:
+This application was originally developed as part of a university project.
+Subsequent contributions by students are welcomed and encouraged under
+the terms of the Apache License 2.0.
+-------------------------------------------------------------------------
