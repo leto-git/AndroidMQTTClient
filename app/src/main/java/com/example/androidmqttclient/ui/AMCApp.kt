@@ -21,16 +21,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.SensorsOff
+import androidx.compose.material.icons.filled.SouthEast
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +48,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -66,7 +71,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.androidmqttclient.R
-import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.data.model.MQTTConnectionState
 import com.example.androidmqttclient.ui.screens.AddServerConnectionScreen
 import com.example.androidmqttclient.ui.screens.ConnectScreen
@@ -74,6 +78,7 @@ import com.example.androidmqttclient.ui.screens.EditServerConnectionScreen
 import com.example.androidmqttclient.ui.screens.PublishScreen
 import com.example.androidmqttclient.ui.screens.StatusScreen
 import com.example.androidmqttclient.ui.screens.SubscribeScreen
+import com.example.androidmqttclient.viewmodel.AMCUiState
 import com.example.androidmqttclient.viewmodel.AMCViewModel
 
 /**
@@ -88,13 +93,13 @@ sealed class MQTTScreen (
     @StringRes val title: Int,
     val icon: ImageVector
 ) {
-    object Connect : MQTTScreen("connect", R.string.connect, Icons.Default.Call)
-    object Subscribe : MQTTScreen("subscribe", R.string.subscribe, Icons.Default.Add)
+    object Connect : MQTTScreen("connect", R.string.connect, Icons.Default.Hub)
+    object Subscribe : MQTTScreen("subscribe", R.string.subscribe, Icons.Default.SouthEast)
     object AddServer: MQTTScreen("add_server", R.string.add_server_screen, Icons.Default.Add)
     object EditServer: MQTTScreen("edit_server/{serverId}", R.string.edit_server_screen, Icons.Default.Edit) {
         fun createRoute(serverId: Int) = "edit_server/$serverId"
     }
-    object Publish : MQTTScreen("publish", R.string.publish, Icons.AutoMirrored.Default.Send)
+    object Publish : MQTTScreen("publish", R.string.publish, Icons.Default.NorthEast)
     object Status : MQTTScreen("status", R.string.status, Icons.AutoMirrored.Filled.List)
     object Info : MQTTScreen("info", R.string.info, Icons.Default.Info)
 
@@ -160,6 +165,7 @@ fun AMCApp(
             MQTTAppBar(
                 currentScreen = currentScreen,
                 canNavigateBack = canNavigateBack,
+                isConnected = uiState.connectionState == MQTTConnectionState.CONNECTED,
                 navigateUp = { navController.navigateUp() }
             )
         },
@@ -220,27 +226,60 @@ fun AMCApp(
 fun MQTTAppBar(
     currentScreen: MQTTScreen,
     canNavigateBack: Boolean,
+    isConnected: Boolean,
     modifier: Modifier = Modifier,
     navigateUp: () -> Unit = {},
 ) {
-    TopAppBar(
-        title = { Text(
-            text = stringResource(currentScreen.title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary,
-        ) },
-        modifier = modifier,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = navigateUp) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_button)
+    Column {
+        TopAppBar(
+            title = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = dimensionResource(R.dimen.padding_medium)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(currentScreen.title),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
                     )
+                    if (isConnected) {
+                        Icon(
+                            imageVector = Icons.Default.Sensors,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.SensorsOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+            modifier = modifier,
+            navigationIcon = {
+                if (canNavigateBack) {
+                    IconButton(onClick = navigateUp) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_button)
+                        )
+                    }
                 }
             }
-        }
-    )
+        )
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    }
 }
 
 /**
@@ -268,6 +307,7 @@ fun MQTTBottomBar(
 
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = null) },
+                label = { Text(stringResource(screen.title)) },
                 selected = isSelected,
                 enabled = if (screen == MQTTScreen.Subscribe || screen == MQTTScreen.Publish) {
                     isConnected
