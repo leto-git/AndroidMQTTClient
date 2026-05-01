@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AndroidMQTTClient"
+rootProject.name = "MQTTElement"
 include(":app")
  

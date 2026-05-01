@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.androidmqttclient"
+    namespace = "com.leto.mqttelement"
     compileSdk = 36
 
     packaging {
@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.androidmqttclient"
+        applicationId = "com.leto.mqttelement"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

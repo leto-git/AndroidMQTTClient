@@ -102,7 +102,7 @@
     <string name="timestamp">Timestamp</string>
     <string name="topic">Topic</string>
     <string name="unsubscribe">Unsubscribe</string>
-    <string name="url_github">https://github.com/leto-git/AndroidMQTTClient</string>
+    <string name="url_github">https://github.com/leto-git/android-mqtt-element</string>
     <string name="user_name_optional">Username (optional)</string>
     <string name="view_subscriptions">View Subscriptions</string>
 </resources>

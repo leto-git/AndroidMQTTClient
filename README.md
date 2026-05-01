@@ -38,7 +38,7 @@ This project is licensed under the **Apache License 2.0**. For more details, see
 ## Getting Started
 
 1. **Clone the repository:**
-   git clone https://github.com/leto-git/AndroidMQTTClient.git
+   git clone https://github.com/leto-git/android-mqtt-element.git
 2. **Open in Android Studio**
    (This project was developed using Android Studio Narwhal (Canary)).
 3. **Build & Run:**
