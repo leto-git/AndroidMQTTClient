@@ -14,8 +14,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.androidmqttclient.data.model.AMCServerConnection
-import com.example.androidmqttclient.data.model.AMCSubscription
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.leto.mqttelement.data.model.AMCServerConnection
 import com.leto.mqttelement.data.model.AMCSubscription
 
@@ -43,6 +43,16 @@ abstract class AMCDatabase : RoomDatabase() {
         @Volatile
         private var Instance: AMCDatabase? = null
 
+        /**
+         * Migration from version 6 to version 7, for future use.
+         * Not used in the current version!
+         */
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Future schema changes go here.
+            }
+        }
+
         fun getDatabase(context: Context): AMCDatabase {
             return Instance ?: synchronized(this) {
                 // Load SQLCipher library
@@ -65,9 +75,10 @@ abstract class AMCDatabase : RoomDatabase() {
                 )
                     // Apply the encryption factory
                     .openHelperFactory(factory)
-                    // Wipes and rebuilds database instead of migrating if no Migration object.
-                    // TODO: Set this to false in production and add a migration object
-                    .fallbackToDestructiveMigration(true)
+                    // Do not drop tables if the schema changes
+                    .fallbackToDestructiveMigration(false)
+                    // Add migration object when the schema changes
+                    // .addMigrations(MIGRATION_6_7)
                     .build()
                     .also { Instance = it }
             }
