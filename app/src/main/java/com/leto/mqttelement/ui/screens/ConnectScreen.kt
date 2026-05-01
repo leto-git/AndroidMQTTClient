@@ -10,6 +10,7 @@
 
 package com.leto.mqttelement.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -258,6 +259,7 @@ fun ConnectScreen(
  * @param onEditClick Callback for when the edit button is clicked.
  * @param onDeleteClick Callback for when the delete button is clicked.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ConnectionItem(
     connection: AMCServerConnection,
