@@ -6,8 +6,8 @@
     <string name="already_connected_to_a_server">Already connected to a server. Please disconnect first.</string>
     <string name="android_jetpack_libraries">Android Jetpack Libraries</string>
     <string name="android_jetpack_libraries_license_notice">Core functionality from the Android Open Source Project. Licensed under Apache 2.0.</string>
-    <string name="app_description">A MQTT client built with Kotlin and Jetpack Compose. Designed for IoT developers to test MQTT connections and for beginners to learn about the basics of MQTT.</string>
-    <string name="app_name">AMC MQTT</string>
+    <string name="app_description">A lightweight MQTT client built with Kotlin and Jetpack Compose. Designed for IoT developers to test MQTT connections and for beginners to learn about the core elements of MQTT.</string>
+    <string name="app_name">MQTT Element</string>
     <string name="are_you_sure_you_want_to_delete">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
     <string name="are_you_sure_you_want_to_delete_the_event_log">Are you sure you want to delete the event log?</string>
     <string name="are_you_sure_you_want_to_delete_the_published_messages">Are you sure you want to clear the history of published messages?</string>
