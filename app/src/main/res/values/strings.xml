@@ -105,4 +105,6 @@
     <string name="url_github">https://github.com/leto-git/android-mqtt-element</string>
     <string name="user_name_optional">Username (optional)</string>
     <string name="view_subscriptions">View Subscriptions</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="url_privacy_policy">https://github.com/leto-git/android-mqtt-element/blob/main/PRIVACY_POLICY.md</string>
 </resources>

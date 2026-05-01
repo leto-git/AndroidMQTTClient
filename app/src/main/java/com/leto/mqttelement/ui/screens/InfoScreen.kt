@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -70,6 +71,7 @@ fun InfoScreen(
     val githubUrl = stringResource(R.string.url_github)
     val pahoUrl = stringResource(R.string.paho_url)
     val sqlcipherUrl = stringResource(R.string.sqlcipher_url)
+    val privacyPolicyUrl = stringResource(R.string.url_privacy_policy)
 
     Column(
         modifier = modifier
@@ -147,7 +149,6 @@ fun InfoScreen(
                     uriHandler.openUri(githubUrl)
                 }
             )
-            // TODO: Mail to developer?
             InfoActionItem(
                 icon = Icons.Default.Description,
                 label = stringResource(R.string.eclipse_paho),
@@ -157,6 +158,11 @@ fun InfoScreen(
                 icon = Icons.Default.Description,
                 label = stringResource(R.string.sqlcipher),
                 onClick = { uriHandler.openUri(sqlcipherUrl) }
+            )
+            InfoActionItem(
+                icon = Icons.Default.PrivacyTip,
+                label = stringResource(R.string.privacy_policy),
+                onClick = { uriHandler.openUri(privacyPolicyUrl) }
             )
         }
 
