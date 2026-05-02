@@ -10,6 +10,7 @@ about the core elements of MQTT.
 
 - **MQTT v3.1.1 & v5.0 Support:** Supports both MQTT v3.1.1 and v5.0 connections via Eclipse Paho integration. Some MQTT v5.0 features are not yet available!
 - **Server Management:** Add, edit, and delete MQTT connection profiles.
+- **Protocols**: Connect to MQTT servers via TCP, TLS (SSL), WebSocket (WS) or Secure WebSocket (WSS)
 - **Publish and Subscribe**: Publish messages and subscribe to different topics.
 - **Logging**: View and copy the history of published and received messages as well as an MQTT event log.
 - **Encrypted Storage:** All broker configurations including passwords are encrypted using **SQLCipher** with 256-bit AES encryption within a Room database.
