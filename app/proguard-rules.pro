@@ -19,3 +19,18 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Rules for R8 to not alter external libraries
+# Do not alter Eclipse Paho MQTT Client
+-keep class org.eclipse.paho.client.mqttv3.** { *; }
+-keep class org.eclipse.paho.mqttv5.** { *; }
+-keep interface org.eclipse.paho.client.mqttv3.** { *; }
+-keep interface org.eclipse.paho.mqttv5.** { *; }
+
+# Dont warn about missing optional dependencies form paho
+-dontwarn org.eclipse.paho.client.mqttv3.**
+-dontwarn org.eclipse.paho.mqttv5.**
+
+# Do not alter SQLCipher
+-keep class net.zetetic.database.sqlcipher.** { *; }
+-keep class net.zetetic.database.** { *; }
