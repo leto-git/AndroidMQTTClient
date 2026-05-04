@@ -45,6 +45,10 @@ This project is licensed under the **Apache License 2.0**. For more details, see
 3. **Build & Run:**
    Sync the Gradle files and run the app on an emulator or physical device.
 
-## Contributing
+## Contributing and Feedback
 
-As this project was created for educational purposes, contributions, bug reports, and feature requests from fellow students and the community are highly welcome.
+As this project was created for educational purposes, forks, bug reports, and feature requests are highly welcome.
+
+- **Forking:** Feel free to fork the project to further develop the app yourself.
+- **Attribution:** If the project is used as a basis for further development, or significant parts of the code are adopted, attribution of the original author (e.g., linking to this GitHub repository) is welcome and encouraged.
+- **Feedback:** For bug reports or feature requests use [Issues](https://github.com/leto-git/android-mqtt-element/issues). Unfortunately, there is no guarantee that feedback can be implemented quickly.
